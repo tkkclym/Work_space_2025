@@ -64,3 +64,53 @@ ssh（Secure Shell）网络协议。用于在不安全的网络环境厚葬提�
 
 - **安全性高**：通过加密通道传输数据，防止数据被窃取或篡改。
 - **方便操作**：相比于使用用户名和密码进行身份验证，SSH 密钥可以避免每次操作都输入密码的麻烦，提高了操作效率。
+
+
+
+
+
+### 当我使用新设备进行上传更新后的文件的时候，有报错：
+
+```shell
+atarkli@ATARKLI-PC2 MINGW64 ~/Desktop/gitProisity/demo1/Work_space_2025 (main)
+$ git add .
+
+atarkli@ATARKLI-PC2 MINGW64 ~/Desktop/gitProisity/demo1/Work_space_2025 (main)
+$ git commit -m "git使用指南上传"
+Author identity unknown
+
+*** Please tell me who you are.
+
+Run
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
+
+fatal: unable to auto-detect email address (got 'atarkli@ATARKLI-PC2.(none)')
+```
+
+#### 原因：
+
+Git 不知道该使用谁的身份来记录这次提交。Git 需要你提供提交者的姓名和邮箱地址，这样在版本历史中才能明确每次提交是由谁完成的。
+
+执行以下代码即可：
+
+```
+git config --global user.name "Your Name"
+git config --global user.email "1724475608@qq.com"
+```
+
+--global意味着所有提交时都是用这个提交人和email
+
+去除意味着在此仓库使用这个
+
+
+
+验证是否成功
+
+git config --global user.name
+
+git config user.name
