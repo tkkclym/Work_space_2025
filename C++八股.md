@@ -1452,3 +1452,256 @@ Body(skeletal,1,"我的发");
 
 那参数呢？对于参数：在确定递归函数的参数的时候没必要一次性确定，当我们需要什么的时候再进行填写参数就行
 
+
+
+
+
+# 右值引用，移动语义：
+
+
+
+左值：lvalue  右值：rvalue
+
+左值：locator value 也就是能够代表一块存储区域的表达式 
+
+能够获取这个表达式的引用或者取地址，也就能够判断其为左值
+
+C++11之后，分为了泛左值和纯右值
+
+泛左值（glvalue）包括lvalue和xvalue(即将消亡的值)
+
+纯右值prvalue
+
+![image-20250219233733674](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250219233733674.png)
+
+以下例子都属于左值（lvalue）：
+
+```c++
+ int a=8; //a属于左值
+ double m = 1.5 ;//m属于左值
+ int *p=new int{5};
+ *p=4;//解引用符号表达式，是左值
+ int b[5];
+ b[1]=10;//属于不可更改的左值（为什么）
+ 
+ int &r=a;
+ 变量r是引用，属于左值引用，左值引用的赋值运算符右侧必须是左值，a也是左值 
+ 
+ 类的数据成员也是左值
+ struct S{
+ int id;
+ }s1;
+ s1.id=3;
+ 例如，s1的成员变量id就是个左值
+ 
+ 返回引用的函数 ，此类函数的调用表达式也是左值
+ 
+ 
+ int &refNumber(){
+ 	static int n=1;
+ 	return n;
+ }
+ int main(){
+ 	reNumber()=5;
+ 	cout<<refNuber()<<endl;
+ }
+ 
+reNumber()也属于左值
+
+```
+
+以下例子属于纯右值：
+
+prvalue:
+
+需要将计算结果存放在临时中间对象中的都是prvalue
+
+例如：
+
+```c++
+int m=3,n=1;
+int x,y,z;
+double d;
+
+x=m+n; //这里的m+n
+y=-m;// 这里的-m
+z=n+2;//这里的n+2;都属于纯右值
+d=(double)z;//这种类型转换也属于prvalue
+
+
+还有一些也属于prvalue
+    非静态类成员函数
+    枚举
+    数组
+    this指针
+    lambda表达式
+    一些内置运算符等：a++,a&&b,a+b等等都是prvalue、
+```
+
+现在跳过xvalue了解下、
+
+#### 右值引用
+
+```c++
+int a=5;
+int&b=a;//左值引用
+此例子中，b是a的引用，a是左值，所以b是左值引用
+
+int &&c=5;
+
+此例子中 &c是引用 5是右值 所以这里&c是右值引用
+但是！注意！
+变量c是一个绑定右值的引用，右值引用只能绑定右值，不能绑定左值；
+    此时如果 int a=5;
+	int &&c=a;
+	这就是错误的（因为a是左值）
+        
+ 有了右值引用就能将左值引用和右值引用分开来
+例如两个重载函数func
+ void func(int& a){
+        cout<<"调用左值引用函数"<<endl;
+    }
+void func(int&& a){
+	   cout<<"调用右值引用函数"<<endl;	
+}
+int a=5;
+
+func(a);//输出调用左值引用
+func(5);//输出调用右值引用
+        
+
+```
+
+#### 移动语义：
+
+通过重载函数能够区分左值引用和右值引用 接下来就能够实现移动语义了。
+
+
+
+首先做一个缓存函数
+
+```c++
+class CharBuffer{
+public:
+	CharBuffer(unsigned int nSize):m_buff(new char[nSize]),m_Size(nSize){
+		cout<<"普通构造函数"<<endl;
+   	~CharBuffer(){
+        delete[]m_buff;
+        cout<<"析构函数"<<endl;
+    }
+}
+private:
+	char* m_buff;
+	unsigned int m_size;
+
+}
+```
+
+**普通构造函数**构造的时候，分配了一块nSize大小的地址，并且指针m_buff指向这块地址
+CharBuffer   m1(100);
+
+但是**拷贝构造**的时候
+ CharBuffer  m2(m1);
+此时因为我们没有定义拷贝构造函数，所以编译器会**自动生成拷贝构造函数**。
+    而自动生成的拷贝构造函数会**将成员变量都复制一遍**
+  会有造成两个错误的地方：
+
+- m2中的指针和m1中的指向一样，指向了同一块地址。
+
+- 销毁两个对象的时候，会调用析构函数，对同一块内存区域释放两次    
+
+ 
+
+
+
+所以为了解决这个问题，创建了自己的**拷贝构造函数**、**拷贝赋值运算符的重载函数**
+
+![image-20250220005548669](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250220005548669.png)	为了实现移动语义还需要**移动构造函数**和**移动赋值运算符重载函数**
+
+跟拷贝的很像，但是参数类型为右值引用，并且去除了const 的限制符，因为我们要在函数中对传入对象进行修改
+
+![image-20250220005718117](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250220005718117.png)
+
+![image-20250220010055472](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250220010055472.png)
+
+移动赋值运算符单独的一张图片（因为没截全）
+
+
+
+
+
+#### 来个例子
+
+```c++
+CharBuffer buff2{CharBuffer(100)};
+```
+
+这里应该是首先  有100参数的调用构造函数进行匿名构造，构造完成说明这是个右值，如果参数是右值的话，对于buff2来说就是调用移动构造函数来创建buff2.
+
+理论确实是这样，但是实际运行的话，会发现
+
+![image-20250220010701661](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250220010701661.png)
+
+为啥只创建了一次对象且未调用构造函数？因为C++11的拷贝省略CopyElision,编译器在一些情况下会省略临时对象创建这一步，而是直接在目标存储位置构造该对象（编译器这样做的目的是省略临时对象的创建，到目标对象的复制或移动、临时对象的销毁等这些不必要的开销）
+
+#### 例子2：
+
+在函数直接返回值的情况下，临时对象的创建也会被省略
+
+```c++
+CharBuffer generate(int n){
+	return CharBuffer(n);
+	}
+int main(){
+		CharBuffer buff2=generate(100);
+}
+```
+
+ ![image-20250220011355970](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250220011355970.png)这叫 返回值优化
+
+
+
+#### 例子3：
+
+具名返回值优化NRVO
+
+```c++
+	CharBuffer generate_nv(int n){
+CharBuffer buf(n);//局部变量，函数返回时会被赋值给一个临时对象，然后生命周期结束被销毁  若没有临时对象，也至少应该赋值到buff2，然后被销毁
+cout<<&buf<<endl;
+return buf;
+}
+int main(){
+CharBuffer buff2=generate_nv(100);
+cout<<&buff2<<endl;
+}
+
+```
+
+输出结果是，&buf也被输出了。
+
+![image-20250220012429305](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250220012429305.png)
+
+使用编译器指令关闭后输出结果为：
+
+![image-20250220012459402](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250220012459402.png)
+
+调试编译器中参数关闭返回值优化和nrvo
+
+![image-20250220012530199](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20250220012530199.png)
+
+
+
+为什么要创建移动构造函数？为什么创建运算符重载函数
+
+
+
+2025年2月20日01:38:51  明天继续看 【一起来学C++  34. 右值引用和移动语义-xvalue, std::move】 https://www.bilibili.com/video/BV1JRUHYxEsy/?share_source=copy_web&vd_source=448909cdfe7ff87e464eb123889e9d9a
+
+
+
+
+
+std::move()属于右值表达式
+
+std::move做了什么？实际上并没有移动什么，只是做了静态转换，将左值转换成了右值引用
