@@ -1540,7 +1540,7 @@ d=(double)z;//这种类型转换也属于prvalue
 
 现在跳过xvalue了解下、
 
-#### 右值引用
+## 右值引用
 
 ```c++
 int a=5;
@@ -1572,7 +1572,7 @@ func(5);//输出调用右值引用
 
 ```
 
-#### 移动语义：
+## 移动语义：
 
 通过重载函数能够区分左值引用和右值引用 接下来就能够实现移动语义了。
 
@@ -1696,12 +1696,217 @@ cout<<&buff2<<endl;
 
 
 
-2025年2月20日01:38:51  明天继续看 【一起来学C++  34. 右值引用和移动语义-xvalue, std::move】 https://www.bilibili.com/video/BV1JRUHYxEsy/?share_source=copy_web&vd_source=448909cdfe7ff87e464eb123889e9d9a
+> 2025年2月20日01:38:51  明天继续看 【一起来学C++  34. 右值引用和移动语义-xvalue, std::move】 https://www.bilibili.com/video/BV1JRUHYxEsy/?share_source=copy_web&vd_source=448909cdfe7ff87e464eb123889e9d9a
 
 
+
+
+
+
+
+> 2025年2月20日 我来公司了 ，开始学移动语义
+
+```c++
+通过
+CharBufer buff1(100);
+CharBuff buff2 =buff1;
+输出结果是，调用了拷贝构造函数
+```
+
+#### 例子1（使用移动构造函数）：
+
+```c++
+CharBuff buff1(100);
+CharBuff buff2=std::move(buff1);
+通过输出结果发现，调用的是移动构造函数，所以std::move()表达式     属于右值表达式
+    
+    由于我们知道他实际上没有移动什么而是静态转换，所以效果等同于
+    CharBuffer buff=static_cast<CharBuffer&&>(buff1);
+```
 
 
 
 std::move()属于右值表达式
 
 std::move做了什么？实际上并没有移动什么，只是做了静态转换，将左值转换成了右值引用
+
+
+
+#### 例子2（使用移动赋值运算符）：
+
+```C++
+int main(){
+CharBuffer buff2(10);
+
+    {
+        CharBuffer buff1(100);
+        buff2=std::move(buff1);
+    }
+这里使用的就是移动赋值运算符，移动语句将左值buff1转化为右值引用,然后移动赋值运算符将其赋值给buff2
+    移动赋值之后，buff1中的指针成为空指针
+    
+    
+    我们还可以看到作用域{}
+    buff1的生命周期在{}内，离开了大括号之后，buff1就被销毁了，而buff2仍然保有buff1的资源，也就是说，对象buff2在buff1即将消亡之前将buff1资源转移到自己这里。这里就是xvalue（即将消亡的值）。我们使用move函数获取他的右值引用，从而将他的资源回收再利用
+}
+```
+
+
+
+
+
+移动语义作用，将哪些将要因为离开作用域而销毁的资源，如果我们还希望能够继续使用它不想让他销毁，那么在他销毁之前使用move函数将其转换成右值引用，再通过移动赋值运算符赋值，使用一个新对象接收，我们就能继续使用那块资源】
+
+#### 移动语义总结：
+
+移动语义的目的：通过std::move 将即将销毁的对象资源转移给另一个对象，避免资源复制
+
+`std::move` 将**左值**转换成**右值引用**，**触发移动构造函数或者移动赋值函数**
+
+
+
+
+
+**移动构造函数**是为了构造 一个 新的对象**，移动赋值运算符**是为了给一个对象赋值或者更新/接受一个新的对象。
+
+#### 例子3：
+
+```c++
+CharBuffer& assign(CharBuffer& to ,const CharBuffer &from ){
+    to =from ;
+    return to;
+}
+CharBuffer&assign(CharBuffer &to ,CharBuffer&& from ){
+	to =from;
+    return to;
+}
+int main(){
+    CharBuffer buff1;
+    CharBuffer buff2(100);
+    assign(buff1,std:move(buff2));
+}
+```
+
+此例子中，并未调用移动赋值运算符，而是拷贝赋值运算符，为什么？
+
+这个涉及类型传递问题。需要使用**完美转发**
+
+## 完美转发
+
+ 依旧看例子3，我们在主函数中调用了参数为右值类型的那个函数，但是函数处理过程并没有显示移动赋值运算
+
+为什么？因为在assign函数中不管参数是什么类型（左值引用或者右值引用）函数内部都有一个**局部变量from去承载它**，可以获取他的地址，所以他是个左值
+
+
+
+
+
+std::forward ()完美转发，如果参数过多都需要区分左右值的话，下面例子是有两个参数，那么需要应对四个重载函数。
+
+<img src="C:\Users\atarkli\AppData\Roaming\Typora\typora-user-images\image-20250220135657199.png" alt="image-20250220135657199" style="zoom:50%;" />
+
+因此，使用模板来替代
+
+```c++
+void f(const string& s){
+cout<<"左值："<<s<<endl;
+}
+void f(string &&s){
+    cout<<"右值:"<<s<<endl;
+}
+
+
+template<class T>
+void g(T&& v){
+	f(std::forward<T>(V));
+}
+该模板的参数T是右值引用的形式 
+  这种被称为万能引用，或者叫转发引用 （universal reference ）
+    他并不是真正的右值引用，因为它既可以   绑定左值，也可以绑定右值  
+    
+    只有在函数模板中，这种形式的参数才能叫做万能引用，如果出现在非函数模板的函数体代码中，则不是万能引用，而属于右值引用
+    在这里g的参数会根据实际类型被推到成相应的类型
+    
+    如果实参是左值，则被推导为实参类型的引用
+    如果实参是右值，被推到为非引用类型
+    
+    例如
+    g(string("helllo"));
+	这是T被推导为string形式
+        即此时模板就被实例化为
+        void g(string &&v){
+        f(std::forawrd<string>(v);)
+    };
+    
+int main(){
+    g(string("hello1"));
+    string s1("hello2");
+    g(s1);
+}
+此时输出
+    右值：hello1
+    左值：hello2
+```
+
+
+
+#### 那forward做了什么呢？
+
+![image-20250220141844063](C:\Users\atarkli\AppData\Roaming\Typora\typora-user-images\image-20250220141844063.png)
+
+ `T&& forward(typename std::remove_reference<T>::typr&t)` 就是将模板类型T去掉引用之后的实际类型
+
+
+
+有点不理解  但是这里forward总的来说做的事情和move一样，只是做了个类型转换
+
+还是看例子来理解，
+
+```c++
+void g(string &&v){
+      f(std::forawrd<string>(v);)
+    };
+```
+
+##### 当g的实参是右值的时候
+
+- 在f函数中传入的是个左值（因为这个v在函数内部属于局部变量了）
+
+- 所以在这里使用了forward函数左值引用的重载函数
+
+- 将forward的模板参数替换成string之后，forward函数实例化就变成了：
+
+  ```c++
+  string &&forward<string>(string &t)  noexcept{
+   return static_cast<string&&>(t);  
+   }
+  ```
+
+  也就是说，我们给函数g传入实参是右值引用，forward返回的也是右值引用
+
+
+
+##### 当g的实参是左值时
+
+forward会将模板转换成 实参的引用形式 
+
+```c++
+string s1("hello2");
+g(s1);
+
+也就是此时 T=string&
+模板实例化就是
+void g<string& &&v){
+	f(std::forward<string&>(v));
+}
+```
+
+此时发现，模板实例化之后会有引用的引用形式，此时就是**引用折叠**的处理方式
+
+```
+T& &    T&  左值引用的左值引用被折叠为左值引用
+T& &&   T&
+T&& &   T&
+T&& &&  T&&  右值引用右值引用才是折叠为右值引用
+```
+
