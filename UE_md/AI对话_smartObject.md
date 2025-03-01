@@ -80,3 +80,31 @@ DialogTable:与该NPC交互时线性任务的对话信息
 
 在MissionSystem的EqualLinearCurrentNPC中，当其中判断NPC的时候为false的时候，就用NPC上存放的属于任务线之外的对话table
 
+
+
+
+
+
+
+# SmartObject
+
+
+
+使用这个框架首先是使用 
+
+#### gameplayBehavior
+
+这个蓝图创建新的 蓝图 
+
+**此蓝图主要作用：**
+
+主要重载两个函数，一个是onfinished onTriggerCharacter
+
+#### gameplayBehaviorConfig
+
+这个蓝图主要是用于配置，终于要在其中配置一下，behaviorClass就可以 就是选择上面的那个
+
+#### 数据资产
+
+数据资产创建选择smartObjectDefinition创建相关资产
+
