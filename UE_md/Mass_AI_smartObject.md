@@ -363,7 +363,9 @@ Context.GetMutableFragmentView<FMyVectorFragment>()：获取当前实体块中�
 
 ##### MassCompositeprocessor
 
-Processor跟task任务差不多，你可以想想不同processor中是怎么处理逻辑的。一层processor列表并不能表达游戏中复杂的逻辑架构，所以需要派生出composite，给他赋予组合的能力,内部有一个 FMassRuntimePipline其中有一个processor数组 应该是管道执行的意思
+Processor跟task任务差不多，你可以想想不同processor中是怎么处理逻辑的。一层processor列表并不能表达游戏中复杂的逻辑架构，所以需要派生出composite，**给他赋予组合的能力**,内部有一个 FMassRuntimePipline其中有一个processor数组 应该是管道执行的意思。
+
+
 
  另外也对Processor类添加更多标记。用于区分执行位置以及执行阶段。还有一个很重要的 FMassProcessorExecutionOrder 用于指明自己要运行在那个组以及要运行在哪些processor之前或者之后
 
@@ -669,3 +671,355 @@ tick中finish就是相当于Completely.
 这样就完美了：
 
 ![Attack](..\Workiong_File\snpi\Attack.png)
+
+
+
+## Rider
+
+在使用rider的时候遇到问题，代码补全是没有的，代码索引是找不到的，代码颜色是一片苍白的。
+
+原因是没有在config配置文件设置编译第三方库和plugin。**选项勾选上完美解决**
+
+
+
+
+
+视频阶段目标：创建相关类，实现收集建造功能
+
+##### Agent相关Trait创建：
+
+继承UMassEntityTraitBase的类
+
+这个类中创建一下Fragment供使用，
+
+1. ​	片段是struct ,其中包含map（资源类，数量）、智能对象类型的句柄：一个建造类的智能对象，一个资源类的智能对象
+
+![chrome.exe_20250312_173230](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\chrome.exe_20250312_173230.png)
+
+2. 把片段添加到实体上，就需要在这个类中创建一个函数用于build.[虚函数 ]
+
+   ![局部截取_20250312_173432](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_173432.png)
+
+3.  添加共享片段  创建共享变量结构以及类中创建参数
+
+ ![局部截取_20250312_173705](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_173705.png)
+
+4. 接着就是在BuildTemplate中创建一个entity子系统，然后添加tag之类的东西。
+
+5. 接着就是创建一个处理器，这个处理器会自动注册，。
+
+![局部截取_20250312_174023](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_174023.png)
+
+
+
+
+
+可以看到这里有一个Execute  但是里面什么都没有写，并且没有其他都是没有任何东西进行  这是一个纯虚函数
+
+
+
+然后在UAgentInitializer中进行初始化的时候要注意，他的父类中有成员变量，这里需要初始化一下，初始化的内容就是创建的Fragment类型的StaticStruct。是什么呢？可以看到其继承于MassOvserverProcessor就是方便自动注册的，。
+
+> 可以根据监控某些Fragment的增加删除或tag的改变来对entity进行初始化，EntityManager会根据是否有观察者而把改变的Entity都记录下来，然后再每帧统一的触发各种observerProcessor
+
+![局部截取_20250312_174023](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_174023.png)
+
+![局部截取_20250312_181117](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_181117.png)
+
+这里有一个建造子系统，然后在子系统中将添加代理添加进去。这个建造子系统需要自己实现一下
+
+
+
+##### 建造子系统:
+
+建造子系统继承自世界子系统，进行创建新的C++类
+
+![局部截取_20250312_181432](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_181432.png)
+
+建造结构体
+
+​	BuildingRequset:建造请求
+
+​	FloorNeeded:楼层
+
+两个构造函数
+
+接着是类中函数：
+
+添加资源到队列()
+
+添加mass代理()
+
+将建筑添加至子系统用于实体构建()
+
+确定楼宇()
+
+寻找资源()
+
+获取楼层高度()
+
+获取队列资源()
+
+ 声明资源（）
+
+![局部截取_20250312_181939](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_181939.png)
+
+最后全局再添加一个网格查询点：`typedef UE::Geometry::TPointHashGrid3<FMassEntityHandle,Chaos::FReal> ItemHashGrid3D;`
+
+ 创建完再在类中创建变量
+
+![局部截取_20250312_182202](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_182202.png)
+
+
+
+
+
+
+
+这里注意，将**物品也设置为trait了**什么意思呢？就是物品也是ECS框架生成，需要配置文件，然后拖到场景中。相关片段资源在15：00~21：00之间
+
+##### 资源类:
+
+创建完成之后回到代码，创建一个资源类。
+
+资源类中添加资源类（就是树，石头的基类吧）
+
+变量：静态网格体
+
+然后一个函数：将资源添加到队列中
+
+该函数事项的是将智能对象放到队列中
+
+![局部截取_20250312_185756](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_185756.png)
+
+实现了一下智能对象的句柄，然后将句柄添加到建造子系统的队列中。【这里算动态 添加组件了？记得包含头文件】
+
+
+
+接着在编辑器中创建资源子类。 
+
+额，，，，还是要在编辑器中添加智能对象组件。
+
+##### 行为定义C++
+
+注意智能对象要有行为定义，我回想一下，好像就是跟智能对象交互时的动作？
+
+
+
+他这里是将行为定义用C++继承行为定义基类实现了，其中包括了 
+
+触发时的函数和结束时的函数。
+
+触发时是将是拿到代理片段，然后将资源句柄reset一下
+
+
+
+Deactive 的时候：拿到mass生成子系统，根据配置文件生成实体模板【？】这是开始建造了？
+
+然后就是对ItemEntity来说就是拿到物品之后然后通过commandbuffer进行push.push之后，Item的C++会接收到，然后执行Execute函数
+
+![局部截取_20250312_205255](..\Workiong_File\snpi\局部截取_20250312_205255.png)
+
+两个Active和Deactive从基类粘贴过来重写就行
+
+
+
+![chrome.exe_20250312_204959](..\Workiong_File\snpi\chrome.exe_20250312_204959.png)
+
+然后回到编辑器的智能对象蓝图，指定一下BehaviorDefinitions
+
+![局部截取_20250312_205109](..\Workiong_File\snpi\局部截取_20250312_205109.png)
+
+至此智能对象的行为定义完成
+
+
+
+##### 建筑类创建 
+
+创建Actor就可以，叫building
+
+变量：智能对象组件
+
+变量：建造层数
+
+cpp文件中，智能对象初始化之后就添加到root上
+
+![局部截取_20250312_205625](..\Workiong_File\snpi\局部截取_20250312_205625.png)
+
+然后在cpp中，beginplay的时候绑定delegate,能够建造就增加一层
+
+![局部截取_20250312_205805](../\Workiong_File\snpi/局部截取_20250312_205805.png)
+
+触发delegate0.5s后添加一层
+
+回到编辑器中，一样的，创建这个C++的子类蓝图，因为C++中已经设置智能对象了，只需要选择一个智能对象配置下就ok的【若无需创建】，然后添加静态网格
+
+这里building的行为定义的话，同样需要新写一个类
+
+##### building行为定义C++
+
+**【类名ConstructLevel】** 属于behaviorDefinition
+
+一样的，两个Active和Deactive从基类粘贴过来重写就行
+
+激活的时候push一下，然后执行对应的mass处理器的逻辑
+
+
+
+##### 类Construction
+
+这里再次创建一个类Construction 继承自MassObserverProcessor.
+
+还记得这个observerProcessor的作用是什么嘛？
+
+> 可以根据监控某些Fragment的增加删除或tag的改变来对entity进行初始化，EntityManager会根据是否有观察者而把改变的Entity都记录下来，然后再每帧统一的触发各种observerProcessor
+
+- 使用Tag标记楼层 ，重写三个函数Execute ，ConfigureQueries，Initialize函数
+
+![局部截取_20250312_211057](..\Workiong_File\snpi\局部截取_20250312_211057.png)
+
+###### 构造:
+
+###### 执行：
+
+​	拿到代理和智能对象的片段
+
+配置就是两个fragment
+
+接着对entities进行循环，再拿到其agent 与智能对象
+
+从智能对象片段中get owner 就能获得Actor，然后再从actor中获取实例化静态网格
+
+接着设置位置，，添加instance
+
+从代理句柄拿到此类型，获得此类型之后，进行减1操作
+
+![局部截取_20250312_211510](..\Workiong_File\snpi\局部截取_20250312_211510.png)
+
+###### 配置：
+
+###### 初始化：
+
+需要拿到建造子系统
+
+
+
+他这里状态树的逻辑是选择寻找物品，找到的话就进行收集， 然后再找建筑物的智能对象，找到之后就claim,告诉其他实体，这个建筑我来建造然后移动到建筑旁边并使用物品建造
+
+#### 状态树：
+
+Evaluator
+
+###### 创建Evaluator 求一些必要的值，：类名RequiredItemsVvaluator
+
+- ​	创建一个结构体，其继承自FMassStateTreeEvaluation
+
+  
+
+- ![局部截取_20250312_231535](..\Workiong_File\snpi\局部截取_20250312_231535.png)
+
+- 结构体 FequiredItemsEvaluatorData
+
+![局部截取_20250312_231609](..\Workiong_File\snpi\局部截取_20250312_231609.png)
+
+link就是状态树资源链接的时候使用的，可以解析其他状态树的数据引用
+
+
+
+
+
+cpp中下面部分是将引用链接到实例数据
+
+![局部截取_20250312_231803](..\Workiong_File\snpi\局部截取_20250312_231803.png)
+
+###### 然后Execute函数：
+
+![长截图_20250312_232309](..\Workiong_File\snpi\长截图_20250312_232309.png)
+
+接着：
+
+![局部截取_20250312_232404](..\Workiong_File\snpi\局部截取_20250312_232404.png)
+
+![局部截取_20250312_232522](..\Workiong_File\snpi\局部截取_20250312_232522.png)
+
+添加所有头文件：
+
+![局部截取_20250312_232618](..\Workiong_File\snpi\局部截取_20250312_232618.png)
+
+
+
+
+
+继续在此文件夹中可以创建任务啊？！
+
+
+
+![局部截取_20250312_232944](..\Workiong_File\snpi\局部截取_20250312_232944.png)
+
+Task完整版本：
+
+![局部截取_20250312_233024](..\Workiong_File\snpi\局部截取_20250312_233024.png)
+
+
+
+
+
+将任务实现一下：
+
+其中的link: 
+
+![局部截取_20250312_233343](..\Workiong_File\snpi\局部截取_20250312_233343.png)
+
+进入状态：
+
+![局部截取_20250312_233428](..\Workiong_File\snpi\局部截取_20250312_233428.png)
+
+Tick函数：
+
+![局部截取_20250312_233543](..\Workiong_File\snpi\局部截取_20250312_233543.png)
+
+
+
+
+
+然后如果找到智能对象了需要声明Claim一下，怎么Claim呢？依然是创建任务，在这个文件中创建：
+
+![局部截取_20250312_234217](..\Workiong_File\snpi\局部截取_20250312_234217.png)
+
+实现这个任务的link和EnterState:
+
+![局部截取_20250312_234356](..\Workiong_File\snpi\局部截取_20250312_234356.png)
+
+ 完整EnterState:
+
+![局部截取_20250312_234508](..\Workiong_File\snpi\局部截取_20250312_234508.png)
+
+
+
+接着移动到目标的Task：
+
+![局部截取_20250312_234653](..\Workiong_File\snpi\局部截取_20250312_234653.png)
+
+link:
+
+![局部截取_20250312_234833](..\Workiong_File\snpi\局部截取_20250312_234833.png)
+
+EnterState:
+
+![局部截取_20250312_234908](..\Workiong_File\snpi\局部截取_20250312_234908.png)
+
+![局部截取_20250312_234943](..\Workiong_File\snpi\局部截取_20250312_234943.png)
+
+
+
+
+
+状态树：
+
+![局部截取_20250312_235107](..\Workiong_File\snpi\局部截取_20250312_235107.png)
+
+
+
+最后创建完成之后，
+
+再创建一个Actor用于生成指定资源。然后Actor 再根据玩家通过1 进行射线检测之后，那些entity在进行收集，玩家通过2创建两个需要建造的东西，然后entities通过搬运这些东西到2的位置，最后完成整个教程，。太几把蓝了这教程，看的我真急吧头疼
