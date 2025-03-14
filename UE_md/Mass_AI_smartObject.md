@@ -1094,3 +1094,11 @@ EnterState:
 
 `get Actor of class `中拆创建自身函数 ：get Enemy Handle，形参类型 Actor
 
+
+
+
+
+
+
+![ST_2](..\Workiong_File\snpi\ST_2.png)
+
