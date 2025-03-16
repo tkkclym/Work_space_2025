@@ -1102,3 +1102,8 @@ EnterState:
 
 ![ST_2](..\Workiong_File\snpi\ST_2.png)
 
+
+
+
+
+如果遇到状态转换到某个状态之之后发现移动不了怎么办？在tick中将状态转化为move状态，并且优先级设置为高
