@@ -557,9 +557,9 @@ Level应该注重的是本Level内的一些表示逻辑，比如，改变Level�
 
 从组合上：
 
-同Controller放到Pawn上一样。因为GameMode可以用于不同的Level，所以通用逻辑应该放到GameMode中。
+同Controller放到Pawn上一样。**因为GameMode可以用于不同的Level，所以通用逻辑应该放到GameMode中。**
 
-GameMode只在server中存在（单机游戏也算Server），对于已经连接上Server的Client，游戏状态都是由Server决定，Client只是负责展示，所以Client上是没有GameMode的，但是有LevelScriptActor，所以GameMode中不要写Client的逻辑，比如操作UI等。
+**GameMode只在server中存在**（单机游戏也算Server），对于已经连接上Server的Client，游戏状态都是由Server决定，Client只是负责展示，所以Client上是没有GameMode的，但是有LevelScriptActor，所以GameMode中不要写Client的逻辑，比如操作UI等。
 
 跟下层的PlayerController比较，GameMode关心的是构建一个游戏本身的玩法。playerController关注的是玩家的行为。想想哪些逻辑属于游戏，哪些逻辑属于玩家。
 
