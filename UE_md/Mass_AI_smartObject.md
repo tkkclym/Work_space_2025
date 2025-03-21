@@ -252,7 +252,7 @@ Archetypes 他是知道自己有多少entity的。 并且如果Entities过多的
 
 MassEntities实体管理器 is the most important part of the massEntity framework .该子系统用于create 和托管the Entity Archetypes
 
-主要作用：这个管理器是处理entity的接口，比如增加减少fragm ents都是在这里进行的。他也负责在不同archetype间转移entities。其他子系统可以使用massCommandBuffer命令异步调用此功能
+主要作用：这个管理器是处理entity的接口，比如增加减少fragments都是在这里进行的。他也负责在不同archetype间转移entities。其他子系统可以使用massCommandBuffer命令异步调用此功能
 
 ![chrome.exe_20250309_150200](..\Workiong_File\snpi\chrome.exe_20250309_150200.png)
 
@@ -558,6 +558,142 @@ Actor的visuallization主要依靠CrowdVisualization这个子类，其中最关�
 GItHub地址： https://github.com/Megafunk/MassSample
 
 https://github.com/Ji-Rath/MassAIExample
+
+
+
+
+
+
+
+
+
+## Mass架构整理下思路
+
+- Entity的一个能力就相当于一个trait ，**Trait** 定义了实体的结构。 然后这个triat通过多个fragment组合而成  ，所以fragment要注册在Trait中。
+
+- 但是呢fragment是用于描述实体应该有哪些数据的，Processor负责处理这些数据，这样可以确保数据和实体分离。
+- **EntityQuery**：定义如何筛选出符合条件的实体。通过 `EntityQuery`，你可以查询到需要操作的实体，并在 **Processor** 中进行数据处理。
+- Processor依赖于 `EntityQuery` 来筛选需要处理的实体。
+- 冷漠无情的 实体逻辑处理机器 **Processor**：Processor负责处理特定数据类型的Entity，他是基于实体的fragment数据执行逻辑的，Processsor并不关心实体需要哪些fragment，他只关心通过query查询得到的实体，以及如何对查询到的实体进行操作。其关系着多个Trait中相关数据传递的
+  - 那Processor之间是怎么协作的？通过sharedFragment共享数据。
+  - 多个processor是并行的，如果需要多个processor需要在同一执行阶段**顺序执行**，则需要将processorComposite下面组织他们
+  - 
+
+- FMassEntityManager ：实体创建修改销毁的管理者
+
+Processor的左膀右臂Query
+
+Entity的组成结构Trait
+
+Trait的数据结构Fragment ，Trait中使用MassEntityManager管理.
+
+Trait让你专注于数据管理，而Entity的生命周期则交给EntityManager管理，EntityManager在Trait中创建和管理实体 
+
+- 
+
+FMassEntityTemplateBuildContexrt用于构建实体模板，注册Fragment.
+
+注册之后需要用一个实体句柄引用实体，通过实体句柄，EntityManager能够在内部追踪和管理实体的生命周期
+
+
+
+
+
+
+
+#### 分析一个Trait文件：
+
+```c++
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#include "Avoidance/MassAvoidanceTrait.h"
+#include "Avoidance/MassAvoidanceFragments.h"
+#include "MassEntityTemplateRegistry.h"
+#include "MassMovementFragments.h"
+#include "MassCommonFragments.h"
+#include "MassNavigationFragments.h"
+#include "Engine/World.h"
+#include "MassEntityUtils.h"
+
+
+void UMassObstacleAvoidanceTrait::BuildTemplate(FMassEntityTemplateBuildContext& BuildContext, const UWorld& World) const
+{
+	FMassEntityManager& EntityManager = UE::Mass::Utils::GetEntityManagerChecked(World);
+
+	BuildContext.RequireFragment<FAgentRadiusFragment>();
+	BuildContext.AddFragment<FMassNavigationEdgesFragment>();
+	BuildContext.RequireFragment<FTransformFragment>();
+	BuildContext.RequireFragment<FMassVelocityFragment>();
+	BuildContext.RequireFragment<FMassForceFragment>();
+	BuildContext.RequireFragment<FMassMoveTargetFragment>();
+
+	const FMassMovingAvoidanceParameters MovingValidated = MovingParameters.GetValidated();
+	const FConstSharedStruct MovingFragment = EntityManager.GetOrCreateConstSharedFragment(MovingValidated);
+	BuildContext.AddConstSharedFragment(MovingFragment);
+
+	const FMassStandingAvoidanceParameters StandingValidated = StandingParameters.GetValidated();
+	const FConstSharedStruct StandingFragment = EntityManager.GetOrCreateConstSharedFragment(StandingValidated);
+	BuildContext.AddConstSharedFragment(StandingFragment);
+}
+
+```
+
+- Trait文件中包含MassEntityManger这个Manager是为了管理实体生命周期。
+
+```c++
+	FMassEntityManager& EntityManager = UE::Mass::Utils::GetEntityManagerChecked(World)
+```
+
+- BuildContext  很显眼，传入这个变量是做什么？构建Trait模板，注册一系列Fragment。 
+
+```c++
+	BuildContext.RequireFragment<FAgentRadiusFragment>();
+	BuildContext.AddFragment<FMassNavigationEdgesFragment>();
+	BuildContext.RequireFragment<FTransformFragment>();
+
+这个注意下AddFragment这个是返回的一个数组
+```
+
+- 接着向下看，一个`FMassMovingAvoidanceParameters`类型变量`MovingValidated`，动态接收从蓝图来的变量 ，都是同一种类型的。【我还在思考`FMassMovingAvoidanceParameters`类型是从哪里来的时候，我知道这肯定是(`属于`)某个Fragment，但是**注意文件名**和**不一定等于该文件中创建的主要类的名称**（文件中包含很多类），查看源文件后发现其类型为结构体】
+
+- 然后经过`Manager`的`GetOrCreateConstSharedFragment`函数处理之后，其变为一个`FConstSharedStruct`类型的共享片段，并用一个`FConstSharedStruct`变量接收
+
+```c++
+	const FMassMovingAvoidanceParameters MovingValidated = MovingParameters.GetValidated();//MovingParameters在.h文件中声明，并这里判断是否有效
+	const FConstSharedStruct MovingFragment = EntityManager.GetOrCreateConstSharedFragment(MovingValidated);
+```
+
+- 接着被BuildContext加入到Trait中
+
+```c++
+	BuildContext.AddConstSharedFragment(StandingFragment);
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------
 
 # state Tree
 
