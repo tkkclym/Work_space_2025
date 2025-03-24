@@ -377,11 +377,36 @@ Note:首先是生成代码的注册过程都会因为HotLoad 这个功能开启�
 
 
 
+> 我从后面回来的，这个懒加载初始化挺重要的，之前没明白大钊写在这里的目的、、
+
+### C++ Static Lazy
+
+ 初始化模式，两种，，一种返回指针、一种返回引用
+
+```c++
+Hello* StaticGetHelo(){
+
+static Hello* obj =nullptr;
+if(!obj){
+	obj=..
+}
+return obj ;
+}
+或者是
+Hello& StaticGetHello(){
+
+    static Hello obj(...);
+    return obj;
+}
+```
+
+使用引用跟简洁安全  。前者使用指针的话，单线程情况下是够用的。为啥用指针呢？因为有些情况对象生命周期是别的地方管理的，如UE的GC，因此这里只static化一个指针
+
 ### UHT代码生成
 
-​		在C++中的预处理就是对源代码进行预编译指令处理，注释删除等操作。 同样当我们使用了宏标记的时候，我们都需要尽心简单或者复杂的词法分析，提取出有用的信息，然后生成所需的代码。
+​		在C++中的预处理就是对源代码进行宏定义展开、头文件包含、条件编译、注释删除等操作。 同样当我们使用了宏标记的时候，我们都需要进行简单或者复杂的词法分析，提取出有用的信息，然后生成所需的代码。
 
-擎里创建一个空C++项目命名为Hello，然后创建个不继承的MyClass类。编译，UHT就会为我们生成以下4个文件：
+擎里创建一个空C++项目命名为Hello，然后创建个不继承的MyClass类。**编译之后**，UHT就会为我们生成以下4个文件：
 
 - HelloClasses.h：目前无用
 - MyClass.generated.h：MyClass的生成头文件
@@ -425,7 +450,7 @@ class HELLO_API UMyClass : public UObject
 
 CURRENT_FILE_ID  ：就是整出了一个ID名字
 
-`__LINE __   `: 就是这个宏在使用时候的行数，你可以看看源C++代码是11行，这里就是11 ，所以有了这个就支持在**同一文件中声明很多类喽**
+`__LINE __   `: 就是这个宏在使用时候的行数，你可以看看源C++代码是11行，这里就是11 ，所以有了这个就支持在**同一文件中声明很多类**，其他类被GENERATED()标记之后，预处理阶段处理之后就是xxx_xxx_h_行号 _GENERATED_BODY,这样的名字
 
 _GENERATED_BODY 加上的后缀
 
@@ -437,11 +462,38 @@ _GENERATED_BODY 加上的后缀
 
 ### MyClass.generated.h
 
+UHT分析生成的文件内容如下：
+
+https://zhuanlan.zhihu.com/p/25098685大钊文件中看吧+-+!
+
+看这部分的话，初学者对宏不了解的，看着这么多大写字母真的无从下手，首先预览下，可以看到不同名字的结构从上到下大致分以下这样的大致结构，具体内容可以先不看，先梳理框架：
+
+```
+#define Hello_Source_Hello_MyClass_h_11_INCLASS_NO_PURE_DECLS \
+
+#define Hello_Source_Hello_MyClass_h_11_INCLASS \
+
+#define Hello_Source_Hello_MyClass_h_11_STANDARD_CONSTRUCTORS \
+
+#define Hello_Source_Hello_MyClass_h_11_ENHANCED_CONSTRUCTORS \
+
+
+接着就是两个比较重要的定义
+#define Hello_Source_Hello_MyClass_h_11_GENERATED_BODY_LEGACY \ //两个重要的定义
+
+#define Hello_Source_Hello_MyClass_h_11_GENERATED_BODY \    //两个重要的定义
+
+```
 
 
 
+整理号顺序之后，就可以从下向上看整个文件的内容，首先能够看到两个上文说过的GENERATED_BODY定义，这两个宏都包含了刚才我们梳理结构出来的其他宏，比如xxxx_INCLASS、xxxx_CLASS_NO_PURE_DECLS  (xxxx是简写 大家应该能看的出来，这里只需要区分这两宏名称)，可以看到这俩个宏定义一模一样。xxxx_STANDARD_CONSTRUCTORS和xxxx_ENHANCE_CONSTRUCTORS他俩几乎也一样，只是差了一个Super(ObjectInitializer){}；构造函数的默认实现
 
-先看这个叫增强构造的
+
+
+#### 先看这个叫增强构造的
+
+xxxx_ENHANCE_CONSTRUCTORS
 
 ```c++
 
@@ -449,13 +501,13 @@ _GENERATED_BODY 加上的后缀
 	/** Standard constructor, called after all reflected properties have been initialized */ \
 	NO_API UMyClass(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()) : Super(ObjectInitializer) { }; \
 private: \
-	/** Private move- and copy-constructors, should never be used */ \
+	/** Private move- and copy-constructors, should never be used 禁止掉C++11的拷贝构造*/ \
 	NO_API UMyClass(UMyClass&&); \
 	NO_API UMyClass(const UMyClass&); \
 public: \
 	DECLARE_VTABLE_PTR_HELPER_CTOR(NO_API, UMyClass); \
 	DEFINE_VTABLE_PTR_HELPER_CTOR_CALLER(UMyClass); \
-	DEFINE_DEFAULT_OBJECT_INITIALIZER_CONSTRUCTOR_CALL(UMyClass)
+	DEFINE_DEFAULT_OBJECT_INITIALIZER_CONSTRUCTOR_CALL(UMyClass) 接下来说这个
 
 ```
 
@@ -468,9 +520,9 @@ public: \
 
 声明定义了一个**构造函数包装器**。因为根据名字反射对象的时候，需要调用该类的构造函数，而类的构造函数并不能用函数指针指向，所以这里用**static函数** 包装一下使其变成一个“平凡的”函数指针，而且所有**类的签名**一致，就可以在UClass里用一个函数指针里保存起来
 
-【说的啥呢，就是要调用构造函数的的时候哪有用指针函数指针指向这样构造的啊，所以包装下，能调用构造函数就好了】
+【说的啥呢，就是要调用构造函数的的时候，**类的构造函数并不能用函数指针指向**，所以包装下，能调用构造函数就好了】
 
-然后想在实现反射框架的时候也可以用更家拜年的方式，使用模板：
+然后想在实现反射框架的时候也可以用更加便捷的方式，使用模板：
 
 ```c++
 template<class TClass>
@@ -479,30 +531,133 @@ new ((EInternal*)X.GetObj())TClass(X);
 }
 ```
 
-再接着看：
+#### 再接着看xxx_INCLASS：
 
 ```c++
 #define Hello_Source_Hello_MyClass_h_11_INCLASS \
 	private: \
-	static void StaticRegisterNativesUMyClass(); \  //定义在cpp中，目前都是空实现
-	friend HELLO_API class UClass* Z_Construct_UClass_UMyClass(); \ //一个构造该类UClass对象的辅助函数
+	static void StaticRegisterNativesUMyClass(); \   义在cpp中，目前都是空实现
+	friend HELLO_API class UClass* Z_Construct_UClass_UMyClass(); \  个构造该类UClass对象的辅助函数
 	public: \
-	DECLARE_CLASS(UMyClass, UObject, COMPILED_IN_FLAGS(0), 0, TEXT("/Script/Hello"), NO_API) \   //声明该类的一些通用基本函数
-	DECLARE_SERIALIZER(UMyClass) \  //声明序列化函数
+	DECLARE_CLASS(UMyClass, UObject, COMPILED_IN_FLAGS(0), 0, TEXT("/Script/Hello"), NO_API) \   声明该类的一些通用基本函数
+	DECLARE_SERIALIZER(UMyClass) \  声明序列化函数
 	/** Indicates whether the class is compiled into the engine */ \
-	enum {IsIntrinsic=COMPILED_IN_INTRINSIC};   //这个标记指定了该类是C++Native类，不能动态再改变，跟蓝图里构造的动态类进行区分。
+	enum {IsIntrinsic=COMPILED_IN_INTRINSIC};   这个标记指定了该类是C++Native类，不能动态再改变，跟蓝图里构造的动态··行区分。
 ```
 
-大钊说  DECLARE_CLASS  是最重要的声明了
+> 大钊说  DECLARE_CLASS  是最重要的声明了
+>
 
-`	DECLARE_CLASS(UMyClass, UObject, COMPILED_IN_FLAGS(0), 0, TEXT("/Script/Hello"), NO_API) \   //声明该类的一些通用基本函数`
+`	DECLARE_CLASS(UMyClass, UObject, COMPILED_IN_FLAGS(0), 0, TEXT("/Script/Hello"),	NO_API) \   //声明该类的一些通用基本函数`
 
-第二个参数为TClass ：基类名字、
+- 第二个参数为**TClass** ：基类名字、
+- 第三个参数**TStaticFlags**:类的属性标记 0，代表默认 
+- 第四个参数**TStaticCastFlags**: 指定该类可以转换成那种类，0代表不能转换为默认类【具体不能转成什么默认类，可以在EClassCastFlags声明中看】
+- 第五个参数**TPackage**：类所处的包名，所有对象都必须在一个包中，这里是"/Script/Hello"，指定是Script下的Hello，Script可以理解为用户自己的实现，不管是C++还是蓝图，都可以看作是引擎外的一种脚本。Hello就是项目名字。
+- 第六个参数参数**TRequiredAPI**:就是用来DLL导入导出的标记，这里是NO_API,不需要导出。
 
-第三个参数TStaticFlags:类的属性标记 0，代表默认 
+```c++
+#define DECLARE_CLASS( TClass, TSuperClass, TStaticFlags, TStaticCastFlags, TPackage, TRequiredAPI  ) \
+private: \
+    TClass& operator=(TClass&&);   \
+    TClass& operator=(const TClass&);   \
+	TRequiredAPI static UClass* GetPrivateStaticClass(const TCHAR* Package); \
+public: \
+	/** Bitwise union of #EClassFlags pertaining to this class.*/ \
+	enum {StaticClassFlags=TStaticFlags}; \
+	/** Typedef for the base class ({{ typedef-type }}) */ \
+	typedef TSuperClass Super;\
+	/** Typedef for {{ typedef-type }}. */ \
+	typedef TClass ThisClass;\
+	/** Returns a UClass object representing this class at runtime 运行时返回一个表示该类的 UClass 对象 */ \
+	inline static UClass* StaticClass() \
+	{ \
+		return GetPrivateStaticClass(TPackage); \
+	} \
+	/**返回此类的静态类标志 */ \
+	inline static EClassCastFlags StaticClassCastFlags() \
+	{ \
+		return TStaticCastFlags; \
+	} \
+	DEPRECATED(4.7, "operator new has been deprecated for UObjects - please use NewObject or NewNamedObject instead") \
+	inline void* operator new( const size_t InSize, UObject* InOuter=(UObject*)GetTransientPackage(), FName InName=NAME_None, EObjectFlags InSetFlags=RF_NoFlags ) \
+	{ \
+		return StaticAllocateObject( StaticClass(), InOuter, InName, InSetFlags ); \
+	} \
+	/** For internal use only; use StaticConstructObject() to create new objects.  */ 
+        仅供内部使用；使用StaticConstructObject（）创建新对象。\
+	inline void* operator new(const size_t InSize, EInternal InInternalOnly, UObject* InOuter = (UObject*)GetTransientPackage(), FName InName = NAME_None, EObjectFlags InSetFlags = RF_NoFlags) \
+	{ \
+		return StaticAllocateObject(StaticClass(), InOuter, InName, InSetFlags); \
+} \
+	/** For internal use only; use StaticConstructObject() to create new objects. */ \
+	inline void* operator new( const size_t InSize, EInternal* InMem ) \
+	{ \
+		return (void*)InMem; \
+	}  
 
-第四个参数TStaticCastFlags: 指定该类可以转换成那种类，0代表不能转换为默认类【具体不能转成什么默认类，可以在EClassCastFlags声明中看】
+external 外部 interal 内部
+```
 
-第五个参数TPackage：类所处的包名，所有对象都必须在一个包中，这里是"/Script/Hello"，指定是Script下的Hello，Script可以理解为用户自己的实现，不管是C++还是蓝图，都可以看作是引擎外的一种脚本。Hello就是项目名字。
+其中的`StaticClass`就是我们经常用到的函数，内部调用了GetPrivateStaticClass其实现正是在Hello.generated.cpp中里的. 下面的内容就能看到这个函数的实现。
 
-第六个参数参数TRequiredAPI:就是用来DLL导入导出的标记，这里是NO_API,不需要导出。
+
+
+### HELLO.generated.cpp
+
+整个HELLO生成一个这个文件，这个文件都有什么功能呢？
+
+有以下几个重要的点：
+
+1. IMPLEMENT_CLASS(UMyClass, 899540749);  这个是跟上面MyClass.generated.h文件中的DECLARE_INCLASS对应的
+2. #if USE_COMPILED_IN_NATIVES  宏编译的时候打开的逻辑，其中包含一些逻辑（注册，链接等
+3. 构造Hello的UPackage
+
+
+
+#### 1中的IMPLEMENT_CLASS; 
+
+```c++
+#define IMPLEMENT_CLASS(TClass, TClassCrc) \
+	static TClassCompiledInDefer<TClass> AutoInitialize##TClass(TEXT(#TClass), sizeof(TClass), TClassCrc); \   //延迟注册
+	UClass* TClass::GetPrivateStaticClass(const TCHAR* Package) \   //.h里声明的实现，StaticClas()内部就是调用该函数
+	{ \
+		static UClass* PrivateStaticClass = NULL; \      又一次static lazy
+		if (!PrivateStaticClass) \
+		{ \
+			/* 这可以用模板来处理，但我们希望它在外部以避免代码膨胀 */ \
+			GetPrivateStaticClassBody( \    //该函数就是真正创建UClass*,以后
+				Package, \  //Package名字
+				(TCHAR*)TEXT(#TClass) + 1 + ((StaticClassFlags & CLASS_Deprecated) ? 11 : 0), \//类名，+1去掉U、A、F前缀，+11去掉_Deprecated前缀
+				PrivateStaticClass, \   //输出引用
+				StaticRegisterNatives##TClass, \
+				sizeof(TClass), \
+				TClass::StaticClassFlags, \
+				TClass::StaticClassCastFlags(), \
+				TClass::StaticConfigName(), \
+				(UClass::ClassConstructorType)InternalConstructor<TClass>, \
+				(UClass::ClassVTableHelperCtorCallerType)InternalVTableHelperCtorCaller<TClass>, \
+				&TClass::AddReferencedObjects, \
+				&TClass::Super::StaticClass, \
+				&TClass::WithinClass::StaticClass \
+			); \
+		} \
+		return PrivateStaticClass; \
+	}
+```
+
+
+
+经过处理之后人肉展开的效果可以看到，展开之后就清晰很多，这样.h的声明和.cpp的定义就全都有了。不管定义了多少函数，要记得注册的入口就是那两个static对象在程序启动的时候登记信息，才有了之后的注册。
+
+
+
+
+
+> 
+
+反射是一种在运行时检查、访问和修改程序的类型信息、成员变量、成员函数等的能力。在传统的静态类型语言（如 C++）里，类型信息在编译时就已经确定，运行时难以动态获取和操作。不过，借助反射机制，程序能够在运行时做到以下几点：
+
+- **类型信息查询**：能够在运行时获取某个对象的类型信息，像类名、父类、成员变量、成员函数等。
+- **成员访问**：可以在运行时动态访问和修改对象的成员变量，调用成员函数。
+- **动态创建对象**：能够在运行时依据类型信息动态创建对象。
