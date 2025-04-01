@@ -227,7 +227,23 @@ FMassFragment通过继承创建自己所需要的片段的时候可以创建一�
 
 - 每个 Entity（实体）都与一个 Archetype 相关联，通过知道自己所属的 Archetype 的 ID，Entity 就能确定自己应该包含哪些 Fragment。 
 - 多个Entities组合成Chunk形式进行存储，这是一种优化存储和处理效率的方式。一个chunk可以有多个chunkFragment
-- **Chunk**是存储 Entity 数据的连续内存块。每个 Chunk 只能存储同一 Archetype 的 Entity，因为它们的 Fragment 布局相同，便于高效访问。
+- **Chunk**是存储 Entity 数据的连续内存块。每个 Chunk 只能存储同一 Archetype 的 Entity，因为它们的 Fragment 布局相同，便于高效访问。\
+
+
+
+##### 结构性变化
+
+​	当 Archetype Chunk 或者说内存块变化的时候会影响性能，导致Chunk变化的操作称为结构性变化，比如实体创建销毁i，组件添加移除都会导致结构性变化（实体会移动至其他Chunk）可以通过CommandBuffer解决这结构性变化带来的并行问题，但是不能完全解决性能问题。
+
+以动态添加组件为例:
+
+- 确定新的Archetype ：根据添加组建后的组合，判断是否需要 创建新的Archetype
+- 数据迁移：将原组件数据转换并拷贝至新的Archetype的Chunk中
+- 更新指针：调整实体的Archetype和Chunk中的指针数据
+
+
+
+
 
 #### Archetypes Storage :
 
@@ -355,9 +371,23 @@ Context.GetMutableFragmentView<FMyVectorFragment>()：获取当前实体块中�
 
 ![chrome.exe_20250309_163122](..\Workiong_File\snpi\chrome.exe_20250309_163122.png)
 
+
+
+2025年4月1日，再来回看，发现漏学了一些东西，尤其是Processor相关的，EntityQuery必须得是Processor的成员变量。Processor的query是构造时进行注册的，然后覆写函数ConfigureQueriers进行配置Query.以及覆写Execute负责执行的逻辑。
+
+
+
+
+
+
+
+
+
+
+
 ​	processor写好之后一般就是对其进行调用，一般是引擎通过反射会自动找到所有的processor类，在引擎中mass的设置类能够找到processor的CDO对象
 
-​	演示手动调用的方法：手动调用是要有执行环境的，也就是Context，然后就可以进行调用，一般有两种调用方式，一个是new Object 一种是CDO方式【CDO方式是啥？】
+​	演示手动调用的方法：手动调用是要有执行环境的，也就是Context，然后就可以进行调用，一般有两种调用方式，一个是new Object 一种是CDO方式【CDO方式是啥？ClassDefaultObject】
 
 ![processor](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\processor.png)
 
