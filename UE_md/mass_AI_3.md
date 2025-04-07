@@ -167,3 +167,55 @@ Building.h Building.cpp
 
 构造函数中执行的 为为观察类型赋值，以及操作类型为Add添加操作
 
+## 状态树中：
+
+状态树的任务是Struct类型，为什么不是Class？好像不是很重要
+
+任务中添加必要的变量和函数：
+
+
+
+任务中主要的三个函数：
+
+Link链接外部变量
+
+EnterState:进入状态
+
+Tick：每帧执行
+
+
+
+Link就是状态树对外部资源进行链接时调用可以解析其他状态树的状态引用。
+
+
+
+状态树源码结构，分为C++方面的和BP方面的，
+
+
+
+C++的Condition，task,Evaluator的基类为StateTreeNodeBase.h
+
+
+
+# Dialogue
+
+
+
+Dialogue中在项目中放置插件，Rider打开插件发现插件没有索引的解决办法：
+
+- 打开项目根目录下的 `.uproject` 文件，用文本编辑器打开。
+- 检查 `Plugins` 部分，确保你的插件配置正确，例如：
+
+```json
+"Plugins": [
+    {
+        "Name": "YourPluginName",
+        "Enabled": true
+    }
+]
+```
+
+- 若插件配置缺失或者有误，进行相应的修改，保存文件后重新生成项目文件。
+
+### 然后在rider中构建一下索引就ok了
+

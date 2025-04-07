@@ -373,7 +373,9 @@ Context.GetMutableFragmentView<FMyVectorFragment>()：获取当前实体块中�
 
 
 
-2025年4月1日，再来回看，发现漏学了一些东西，尤其是Processor相关的，EntityQuery必须得是Processor的成员变量。Processor的query是构造时进行注册的，然后覆写函数ConfigureQueriers进行配置Query.以及覆写Execute负责执行的逻辑。
+2025年4月1日
+
+再来回看，发现漏学了一些东西，尤其是Processor相关的，EntityQuery必须得是Processor的成员变量。Processor的query是构造时进行注册的，然后覆写函数ConfigureQueriers进行配置Query.以及覆写Execute负责执行的逻辑。
 
 
 
@@ -930,7 +932,7 @@ tick中finish就是相当于Completely.
 
 
 
-然后在UAgentInitializer中进行初始化的时候要注意，他的父类中有成员变量，这里需要初始化一下，初始化的内容就是创建的Fragment类型的StaticStruct。是什么呢？可以看到其继承于MassOvserverProcessor就是方便自动注册的，。
+然后在UAgentInitializer中进行初始化的时候要注意，他的父类中有成员变量，这里需要初始化一下，初始化的内容就是创建的Fragment类型的StaticStruct。是什么呢？可以看到其继承于MassOvserverProcessor就是方便自动注册的。
 
 > 可以根据监控某些Fragment的增加删除或tag的改变来对entity进行初始化，EntityManager会根据是否有观察者而把改变的Entity都记录下来，然后再每帧统一的触发各种observerProcessor
 
@@ -1038,6 +1040,14 @@ Deactive 的时候：拿到mass生成子系统，根据配置文件生成实体�
 
 ![chrome.exe_20250312_204959](..\Workiong_File\snpi\chrome.exe_20250312_204959.png)
 
+、、
+
+所以这个item作用是采集之后生成东西的地方？。
+
+
+
+
+
 然后回到编辑器的智能对象蓝图，指定一下BehaviorDefinitions
 
 ![局部截取_20250312_205109](..\Workiong_File\snpi\局部截取_20250312_205109.png)
@@ -1078,7 +1088,11 @@ cpp文件中，智能对象初始化之后就添加到root上
 
 
 
-##### 类Construction
+##### 类Construction 处理器
+
+该处理器主要作用及就是建造，增高building的高度以及减少资源数量
+
+
 
 这里再次创建一个类Construction 继承自MassObserverProcessor.
 
@@ -1108,6 +1122,32 @@ cpp文件中，智能对象初始化之后就添加到root上
 
 ![局部截取_20250312_211510](..\Workiong_File\snpi\局部截取_20250312_211510.png)
 
+#####  1.  数据获取
+
+- `Context.GetMutableFragmentView<FAgentFragment>()`：获取可修改的代理数据片段视图。
+- `Context.GetFragmentView<FMassSmartObjectUserFragment>()`：获取智能对象用户数据片段的只读视图。
+
+##### 2. 实体遍历处理
+
+- 遍历当前上下文中的所有实体，通过索引获取代理数据 `Agent` 和智能对象用户数据 `SOUser`。
+
+##### 3. 智能对象组件处理
+
+- 如果智能对象组件存在，获取所属的Actor，获取静态网格组件，计算新实例位置，然后通过addinstance添加网格实例
+
+##### 4. 代理状态更新
+
+- Agent.BuildingHandle = FSmartObjectHandle::Invalid 标记为无效
+- Remove Tag<FConstructionFloor> 从实体中移除标签，白哦名建造状态变更
+
+##### 5.资源消耗
+
+agent中的Inventory中查找石头和树资源，找到的话就各消耗一个单位。
+
+
+
+---
+
 ###### 配置：
 
 ###### 初始化：
@@ -1118,13 +1158,17 @@ cpp文件中，智能对象初始化之后就添加到root上
 
 他这里状态树的逻辑是选择寻找物品，找到的话就进行收集， 然后再找建筑物的智能对象，找到之后就claim,告诉其他实体，这个建筑我来建造然后移动到建筑旁边并使用物品建造
 
+
+
+
+
 #### 状态树：
 
-Evaluator
+Evaluator 全局相关的那个
 
-###### 创建Evaluator 求一些必要的值，：类名RequiredItemsVvaluator
+###### 创建Evaluator 求一些必要的值：类名RequiredItemsEvaluator   
 
-- ​	创建一个结构体，其继承自FMassStateTreeEvaluation
+- 创建一个结构体，其继承自FMassStateTreeEvaluation
 
   
 
