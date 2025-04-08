@@ -310,9 +310,11 @@ TUniquePtr<FSmartStruct>uniqueP_01=MakeUnique<FSmartStruct>();
 
 # 网络复制：
 
+网络复制是什么意思？将一些信息从服务器到客户端的一些复制信息
 
 
-虚幻引擎有一个宏能够判断是不是属于服务端 switch has Authority
+
+虚幻引擎有一个宏节点能够判断是不是属于服务端 switch has Authority
 
 玩家蓝图上勾选replicates，能够在客户端拉取一些信息到客户端，勾选复制运动的话，每个端都会将运动数据上传，然后客户端从服务端获取。服务端还是自己的
 
@@ -321,3 +323,313 @@ TUniquePtr<FSmartStruct>uniqueP_01=MakeUnique<FSmartStruct>();
 
 
 虚幻有rpc框架  将事件中的
+
+
+
+# UE的网络概念
+
+1. 是实时网络，就是相当于部落冲突那种弱联网而言
+2. 不涉及HTTP和数据库（注册登录，增删该改查等）
+3. 有Session(会话)概念，相当于房间
+4. 适用于LAN和WAN，局域网，广域网
+
+### 内容概要：
+
+网络架构，网络复制，Ownship[联网的controller，pawn以及其所属的武器等], ActorRole， RPC，影响网络游戏流畅的因素
+
+### 网络架构：
+
+常规的Client - Server 架构
+
+1. 一个服务端，一个或多的客户端   [与这个架构相对的就是端对端的网络模式]
+2. 不能信任任何客户端，**所有信息都要经过服务器验证**,防外挂
+3. Listen Server & Dedicated Server 【一人创建房间等待大家加入的服务器，监听服务器】 & 专用服务器【专有服务器只是用来计算，所有玩家都是作为客户端加入的】
+   - 网络总会有延迟，如果是使用listen server 的话，开服务器的玩家肯定比别人更快
+   - 打包dedicated Server  ,使用ListenServer模式开发打包的时候可以直接打包成dedicated Server ！！游戏框架逻辑几乎一样。只是打包方式可能有些不同
+   - 后续学习基于listenServer
+4. 当我们是客户端时是在操作本地角色还是远程角色？直接操作的是客户端，在服务端上复制本地操作的那个角色 就是远程角色。
+   - 比如一个开枪操作，假如本地点击开枪，将请求发送到服务器，服务器进行验证是否有作弊行为之后再返回允许开枪，这个延迟是很大的，所以处理方式就是在向服务端发送请求的同时，本地就进行一次模拟开枪了。至于最终的结果是如何的都是通过服务器进行计算的，计算完再将射击结果发送的客户端。所以回到题目，我们在客户端激素hi同时操作了本地角色和远程角色。
+
+![cs](C:\Users\atarkli\Desktop\snipaste截图\cs.png)
+
+游戏状态以及每个玩家的状态都会从服务端复制到每一个客户端用于镜像，但是玩家的controller是不能相互知道的，只有在服务端有统一的信息，在每个客户端又有每个Client单独的Game Instance和UI用于处理本地的逻辑操作
+
+#### 网络信息传递的主要方式:
+
+replication   网络复制一定是单向的，只能从服务端复制到客户端
+
+Rep_Notify
+
+RPC  这个是任意方向
+
+#### Replication:
+
+网络复制  **只能从服务端复制到客户端**
+
+Actor及其派生类才有Replication能力
+
+Replication的三种类型：
+
+​	Actor Replication  对象的网络复制
+
+​	Property Replication 具体的属性的网络复制
+
+​	Component Replication 组件本身的网络复制
+
+##### Actor Replication  
+
+两层意义：
+
+1. 服务端生成，客户端也跟着生成一个镜像一样的东西，如果这个Actor没有开启replication,客户端不会有对象
+2. actor replication也相当于一个**总开关**，包括当前Actor的所有属性的复制，组件复制，以及RPC的开关
+   - 开启的话，在蓝图中勾选Replication C++中构造函数中将bReplicates=true
+   - 如果没有开启，在服务端的一些物品就不会在客户端出现。
+   - 然后如果生成的时候是在关卡蓝图生成的，可以使用Switch has Authority 根据是否是replication进行分支后续处理
+
+![switch has Authority](..\Work_space_2025\screenshot\net\switch has Authority.png)
+
+此时物体replicates关闭状态：这里是在服务端生成了一个物体，那么开始运行，客户端是看不到这个生成的物体的，但是！！！客户端操作的角色移动到这里的时候会被阻挡，为什么呢？ 
+
+因为角色的运动是在服务端计算的，charactermovement组件，networking is fully implemented
+
+如果物体replicates开启状态：则是服务端生成一个网格体复制到客户端一份。
+
+
+
+##### Property Replication
+
+属性复制。在蓝图就是将蓝图中创建的variable中的replication改为Replicated就可以实现复制了【这个是可以多选的，NONE,Replicated,Rep_notify】、
+
+可以在蓝图中添加一个变量，然后通过选择不同的replicate进行实验
+
+**C++：**
+
+C++中如何实现呢？
+
+1. 首先在类中添加网络复制相关头文件`#include "Net/UnrealNetwork.h"`
+2. 在类中创建变量，变量要使用宏标记，UPROPERTY(Replicated).一般想要在蓝图中看到的话，再加个EditAnyewhere
+3. .cpp文件中在GetLifetimeReplicatedProps函数中共添加DOREPLIFETIME(类名，变量名)。不需要声明此函数，直接重载添加
+
+在C++中实现蓝图中has Authority逻辑的话：
+
+```c++
+.h文件：
+public:
+	UPROPERTY(Replicated)
+  	  float Health;
+
+
+.cpp文件：
+   
+void TESTActor::BeginPlay(){
+	Super::BeginPlay();
+	if(HasAuthority()){
+		Health=500.0f; 
+	}
+}
+void TESTActor::Tick(float DeltaTime){
+    Super::Tick(DeltaTime);
+    if(HasAuthority()){
+        UE_LOG(LogTemp,Warning,TEXT("Server Health:%f"),Health);
+    }else{
+        UE_LOG(LogTemp,Warning,TEXT("Client Health:%f"),Health);
+    }
+}
+
+
+void TESTActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&OutLifetimeProps) const {
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(TESTActor,Health);
+}
+
+```
+
+如果不需要网络复制的话，就把Replicated的宏删除，以及GetLifetimeReplicatedProps函数也删除，这样没有网络复制，LOG打出的服务端与客户端的值就会不同。
+
+
+
+属性复制中的` DOREPLIFETIME(TESTActor,Health);`其实是有三个参数，第三个参数是条件复制，跟ownership相关
+
+
+
+
+
+##### Rep_Notify 复制通知
+
+​	意义：一个变量设置为Rep_Notify ,当该变量发生复制时，服务端客户端都可以调用一个自定义的函数 。也就可以设置为当这个值改变的时候，客户端服务端都有调用一次这个变量对应的Rep函数
+
+https://www.bilibili.com/video/BV1ht4y1z79w?t=364.1
+
+但是如果是**C++**，仅在客户端调用函数
+
+C++中实现Rep_Notify机制：
+
+
+
+- C++新创建一个Actor
+- 然后将Actor的网络复制打开，也就是bReplicates=true;
+- 声明一个变量UPROPERTY(ReplicatedUsing = OnRep_Armor)float armor =0.0f;
+- 声明通知函数 UFUNCTION() void OnRep_Armor();
+- Tick中刷新下数值，数值更改使其调用OnRep_Armor函数。
+
+```c++
+void MyActor::Tick(float DeltaTime){
+	Super::Tick(DeltaTime);
+	if(HasAuthority()){
+		Armor=FMath::Rand();
+	}
+}
+```
+
+- 定义通知函数OnRep_Notify
+
+```c++
+void MyActor::OnRep_Armor(){
+	if(HasAuthority()){
+		UE_LOG(LogTemp,Warning,TEXT("server Armor:%f"),Armor);
+	}else{
+		UE_LOG(LogTemp,Warning,TEXT("Client Armor:%f"),Armor);
+	}
+}
+```
+
+- 加上变量复制注册函数：
+
+```C++
+void MyActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&OutLifetimeProps) const {
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(MyActor,Armor);
+}
+ 
+别忘记网络相关头文件 #include "Net/UnrealNetwork.h"
+```
+
+如果报错没有根场景组件的时候，那就在构造函数中添加一个根场景组件就行
+
+```c++
+SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("Root")));
+```
+
+
+
+然后正常运行时我们就会发现，只有打印出来的Client Armor，这个就是起初提到的**C++使用此机制仅在客户端调用函数**，后面RPC的话可以调用服务端的函数
+
+
+
+#### OwnerShip所有权
+
+
+
+每一个接入服务端的玩家都会创建一个连接，也就是connection,然后这connection就会分配一个player controller 用于控制相应的pawn等，这就是从connection形成一个关系链
+
+![ownership](..\Work_space_2025\screenshot\net\ownership.png)
+
+###### 为什么要了解ownership？
+
+1. RPC要确定哪个客户端将执行运行于客户端的RPC 【important】
+2. Actor复制与连接相关性
+3. 设计所有者时的Actor属性复制条件
+
+ownership会在actor复制期间使用。acitor有一个属性bOnlyRelevantToOwner.谁拥有这个开启了这个属性的actor，谁才会接收到这个actor的属性更新。 而player controller是默认开启的，也就是其他玩家没必要获取其他controller中的信息。    比如控制的pawn的位置不能让其他玩家知道吧，比如我的弹夹中有没有子弹，有没有空投枪啥的不能让其他人知道吧，尤其是搜打撤游戏中，携带物资多少尤其不能让其他人知道。
+
+ 
+
+###### 如何设置或/改变/获取 ownership？
+
+- spawnActor中有owner
+
+![spawn](..\Work_space_2025\screenshot\net\spawn.png)
+
+- setOwner:节点直接使用搜素就能使用
+
+- Possess（onpossess>possessedBy>setOwner),Unpossess，这个在AiController中用过，拥有一个pawn或者取消拥有时使用。
+
+- GetOwner 用的比较多了，动画通知，动画通知状态，组件等中都使用过。主要作用通过获取拥有着进行调用某些相关蓝图接口，实现相关功能。
+
+#### Actor Role
+
+> 在 Actor 的复制过程中，有两个属性扮演了重要角色，分别是 **Role** 和 **RemoteRole**
+
+- Authority 权威
+- Simulated Proxy   模拟代理
+- Autonomous Proxy  自主代理
+
+![roel](..\Work_space_2025\screenshot\net\roel.png)
+
+- 不管是哪个角色在服务端的话都是Authority。
+- 有了这role 和remoterole就能知道谁拥有actor的主控权，actor是否被复制，复制模式
+
+首先就是谁拥有特定的actor主控权。要确定当前运行的引擎实例是否有主控权，需查看当前Role属性是不是ROLE_Authority.如果是，就说明这个运行中的引擎实例掌管此Actor(决定其是否被复制)
+
+嗯，，感觉就是定死的嘛，服务端authority,而客户端中是另外两个。就是服务端有主控权，并且只有服务端能够向客户端单向同步呀。
+
+
+
+###### 复制模式：
+
+服务器不会在每次更新时复制 actor。这会消耗太多的带宽和 CPU 资源。是有时间间隔进行发送请求然后返回请求的，不然数据量交互太大。假如A在移动，B端观察那个A的时候有可能是一卡一卡的，而游戏中没有这种情况，原因是有移动位置之间是由插值存在的，具体怎么解决呢？就是两种模拟方式嘛，也就是对应的不同的模拟方式`ROLE_SimulatedProxy`与`ROLE_AutonomousProxy`
+
+
+
+### RPC 
+
+> 终于来了，RPC 网络复制说完就说RPC
+
+#### RPC是什么？
+
+函数调用，但是不一定是本地执行，而是调用远端函数
+
+- 客户端调用服务端执行
+- 服务端调用客户端执行
+- 函数**不可以有返回值**
+- 默认是不可靠的，如果要让他可靠得加个reliable 嗯，看公司项目里还分为reliable server 和reliable client
+
+##### 为什么RPC不能有返回值？
+
+1. 网络通信的异步性：RPC调用是异步的，客户端发送请求之后不能立刻得到结果，服务端需要处理时间，返回值无法及时传递
+2. 网络可靠问题：网络传输可能丢包或延迟，返回值可能无法正确达到调用方
+3. 执行顺序问题，多个RPC可能乱序到达
+4. 性能考虑，返回值可能增加网络流量和同步复杂度
+
+
+
+##### RPC没有返回值，那是如何实现功能的呢？
+
+1. 服务器通知：服务器通过单独的RPC通知客户端结果（如ClientEndSkill）
+2. 状态同步：通过变量复制(replication)同步状态（如Available变量）
+3. 回调机制：通过事件或委托通知调用方结果
+4. 预测机制：客户端先本地执行，服务器再验证
+
+#### RPC蓝图/C++实现
+
+##### 蓝图：
+
+customEvent的RPC选项设置为：
+
+Run On Server
+
+Run On Owning Client
+
+Net MultiCast
+
+
+
+前面说了RPC函数是不能有返回值的，所以在创建的蓝图中怎么设置呢？
+
+通过创建Custome Event，然后在细节可以选是否开启RPC以及是否是reliable
+
+![rpc1](..\Work_space_2025\screenshot\net\rpc1.png)
+
+
+
+##### C++：
+
+要将函数声明为RPC的话只需要要将
+
+Server
+
+Client
+
+NetMulticast 
+
+关键字添加进UFUNCTION声明中。【额，还是和uc脚本有些区别的，正常】
