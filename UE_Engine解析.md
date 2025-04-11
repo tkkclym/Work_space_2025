@@ -467,9 +467,9 @@ C++中实现Rep_Notify机制：
 
 
 - C++新创建一个Actor
-- 然后将Actor的网络复制打开，也就是bReplicates=true;
-- 声明一个变量UPROPERTY(ReplicatedUsing = OnRep_Armor)float armor =0.0f;
-- 声明通知函数 UFUNCTION() void OnRep_Armor();
+- 然后将Actor的网络复制打开(总开关)，也就是bReplicates=true;
+- 声明一个变量`UPROPERTY(ReplicatedUsing = OnRep_Armor)float armor =0.0f;`
+- 声明通知函数` UFUNCTION() void OnRep_Armor();`
 - Tick中刷新下数值，数值更改使其调用OnRep_Armor函数。
 
 ```c++
@@ -622,6 +622,16 @@ Net MultiCast
 
 
 
+假如自定义事件是onserver的时候，客户端触发这个事件就会在服务器上进行逻辑操作。客户端触发了，服务器是有这个客户端的authority的，客户端的玩家也是服务器复制来的。客户端调用服务器事件的时候是在服务器进行逻辑处理，然后再将效果复制到客户端的。
+
+还有个点是需要注意的，当在playerController上使用RPC的onserver的函数时，只会在当前玩和服务器上运行，也就是controller的函数内容其他玩家是接收不到的，也不该接收
+
+
+
+Net MultiCast是只在服务器执行的，用的比较少
+
+
+
 ##### C++：
 
 要将函数声明为RPC的话只需要要将
@@ -635,3 +645,5 @@ NetMulticast
 关键字添加进UFUNCTION声明中。【额，还是和uc脚本有些区别的，正常】
 
 engine
+
+
