@@ -133,3 +133,14 @@ FStateTreeStateHandle currentState=Context.GetCurrentState();
 这个类很有用，适用于执行状态树的类，你看看他的文件名就知道是干什么的了，Execution。
 FStateTreeExecutionFrame 这个结构体非常重要。它属于FStateTreeeExecutionContext的一部分，用于**FStateTreeExecutionFrame**
 
+
+
+
+
+2025年4月18日
+
+创建状态树的时候有两个父类可以继承创建，区别是什么？一个可以将AI Controller作为上下文，一个不行
+
+![State的继承](..\Snipaste\State的继承.png)
+
+![State区别](..\Snipaste\State区别.png)
