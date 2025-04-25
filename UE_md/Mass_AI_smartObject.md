@@ -756,7 +756,7 @@ stateTree Component其实是继承于BrainComponent的，也就是继承自AICon
 
 通过挂载的方式pawn上起作用 挂上之后再选择State Tree，哪个logic Automatically 是自动勾选的
 
-![state2](..\Workiong_File\snpi\state2.png)
+<img src="..\Workiong_File\snpi\state2.png" alt="state2" style="zoom: 200%;" />
 
 <img src="..\Workiong_File\snpi\StateTree.png" alt="StateTree" style="zoom:67%;" />
 
@@ -936,9 +936,9 @@ tick中finish就是相当于Completely.
 
 > 可以根据监控某些Fragment的增加删除或tag的改变来对entity进行初始化，EntityManager会根据是否有观察者而把改变的Entity都记录下来，然后再每帧统一的触发各种observerProcessor
 
-![局部截取_20250312_174023](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_174023.png)
+![局部截取_20250312_174023](..\Workiong_File\snpi\局部截取_20250312_174023.png)
 
-![局部截取_20250312_181117](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_181117.png)
+![局部截取_20250312_181117](..\Workiong_File\snpi\局部截取_20250312_181117.png)
 
 这里有一个建造子系统，然后在子系统中将添加代理添加进去。这个建造子系统需要自己实现一下
 
@@ -948,7 +948,7 @@ tick中finish就是相当于Completely.
 
 建造子系统继承自世界子系统，进行创建新的C++类
 
-![局部截取_20250312_181432](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_181432.png)
+![局部截取_20250312_181432](..\Workiong_File\snpi\局部截取_20250312_181432.png)
 
 建造结构体
 
@@ -976,13 +976,13 @@ tick中finish就是相当于Completely.
 
  声明资源（）
 
-![局部截取_20250312_181939](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_181939.png)
+![局部截取_20250312_181939](..\Workiong_File\snpi\局部截取_20250312_181939.png)
 
 最后全局再添加一个网格查询点：`typedef UE::Geometry::TPointHashGrid3<FMassEntityHandle,Chaos::FReal> ItemHashGrid3D;`
 
  创建完再在类中创建变量
 
-![局部截取_20250312_182202](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_182202.png)
+![局部截取_20250312_182202](..\Workiong_File\snpi\局部截取_20250312_182202.png)
 
 
 
@@ -1004,7 +1004,7 @@ tick中finish就是相当于Completely.
 
 该函数事项的是将智能对象放到队列中
 
-![局部截取_20250312_185756](C:\Users\atarkli\Desktop\gitProisity\demo1\Work_space_2025\Workiong_File\snpi\局部截取_20250312_185756.png)
+![局部截取_20250312_185756](..\Workiong_File\snpi\局部截取_20250312_185756.png)
 
 实现了一下智能对象的句柄，然后将句柄添加到建造子系统的队列中。【这里算动态 添加组件了？记得包含头文件】
 

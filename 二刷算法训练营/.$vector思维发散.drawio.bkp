@@ -1,0 +1,33 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.2.2 Chrome/134.0.6998.178 Electron/35.1.2 Safari/537.36" version="26.2.2">
+  <diagram name="第 1 页" id="82bpFv1d8EzvwWAj_kMp">
+    <mxGraphModel dx="1030" dy="619" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="1654" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="1k1W2q-cotQ6aSmStONc-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="1k1W2q-cotQ6aSmStONc-1" target="1k1W2q-cotQ6aSmStONc-3">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="580" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="1k1W2q-cotQ6aSmStONc-1" value="push_back和emplace_back的区别" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="240" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="1k1W2q-cotQ6aSmStONc-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="1k1W2q-cotQ6aSmStONc-3" target="1k1W2q-cotQ6aSmStONc-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="1k1W2q-cotQ6aSmStONc-3" value="使用emplace_back时可以使用移动构造进行在数组末尾添加元素" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="225" width="170" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="1k1W2q-cotQ6aSmStONc-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="1k1W2q-cotQ6aSmStONc-4" target="1k1W2q-cotQ6aSmStONc-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="1k1W2q-cotQ6aSmStONc-4" value="移动构造和移动赋值运算符的重载" style="whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="555" y="410" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="1k1W2q-cotQ6aSmStONc-6" value="移动相关函数的细节：noexcept,&lt;div&gt;this!=&amp;amp;other，对新值的处理，对旧值的处理&lt;/div&gt;" style="whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="395" width="175" height="90" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
