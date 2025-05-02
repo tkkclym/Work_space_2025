@@ -1144,3 +1144,486 @@ public:
 };
 ```
 
+
+
+#### 赎金信
+
+简简单单赎金信，就是查hash表中有没有相关的key以及具体的value进行变化
+
+```c++
+class Solution {
+public:
+    bool canConstruct(string ransomNote, string magazine) {
+        unordered_map<int,int>library;
+        for(int i=0;i<magazine.size();i++){
+            library[magazine[i]-'a']++;//循环各个字母进行hash表中元素value修改
+        }
+        for(int j=0;j<ransomNote.size();j++){
+            //直接从刚有的hash表中进行筛查，刚才的属于库中元素及其个数，这里直接减就行
+            library[ransomNote[j]-'a']--;
+        }
+        for(auto i:library){
+            if(i.second<0){
+                return false;
+            }
+        }
+        return true;
+    }
+};
+```
+
+吊毛别忘了，除了set哈希，map哈希,数组也可以做哈希表。
+
+而且知道具体值最多只有26个，数组的话运算速度更快。
+
+```c++
+class Solution {
+public:
+    bool canConstruct(string ransomNote, string magazine) {
+       int library[26]={0};
+        for(int i=0;i<magazine.size();i++){
+            library[magazine[i]-'a']++;//循环各个字母进行hash表中元素value修改
+        }
+        for(int j=0;j<ransomNote.size();j++){
+            //直接从刚有的hash表中进行筛查，刚才的属于库中元素及其个数，这里直接减就行
+            library[ransomNote[j]-'a']--;
+        }
+        for(int i=0;i<26;i++){
+            if(library[i]<0){
+                return false;
+            }
+        }
+        return true;
+    }
+};
+```
+
+#### 三数之和 
+
+[15. 三数之和](https://leetcode.cn/problems/3sum/) 梦破碎的地方
+
+明确题目，一个数组中三个数，三个数相加等于0，找出所有符合条件且不重复的三元组返回。
+
+主要使用双指针了，双指针中也是要去重的，去重的时候是跟i所在的值前面一个相比还是后面一个相比还是不同的。这里要做好区分。还有就是一个continue 继续下一轮循环，continue关键字没怎么用过。
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        // 首先将数组排序
+        vector<vector<int>> result;
+        int n = 0;
+        sort(nums.begin(), nums.end());
+        for (int i = 0; i < nums.size(); i++) {
+            // 开始去重，当i大于0的之后的直接不用考虑了
+            if (nums[i] > 0)
+                return;
+            int left = i + 1;
+            int right = nums.size() - 1;
+            while (right > left) {
+                if (nums[i] == nums[i - 1])
+                    continue;
+                else if (nums[i] + nums[left] + nums[right] > 0) {
+                    right--;
+                } else if (nums[i] + nums[left] + nums[right] < 0) {
+                    left++;
+                }else{
+                    //这个里面就是先收集结果，然后再去重操作
+                    result.push_back(nums[i],nums[left],nums[right]);
+                    //这里真不会这几个数放进去啊。
+                    while(nums[left]==nums[left-1])left++;
+                    while(nums[right]==nums[roght+1])right++;
+        
+                }
+                right--;
+                left++;
+                //判断条件结束之后进行同时收缩
+            }
+        }
+        return result;
+    }
+};
+```
+
+
+
+这里有几个问题：
+
+1. 在push_back二维数组的时候有点蒙蔽。
+2. 什么时候进行同时收缩的逻辑有点不清晰。
+3. 去重a的位置逻辑有问题，不应该放在while(right<left)中，应该是在for循环中
+4. b,c 去重逻辑搞清楚一点
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> threeSum(vector<int>& nums) {
+        // 首先将数组排序
+        vector<vector<int>> result;
+        sort(nums.begin(), nums.end());
+        for (int i = 0; i < nums.size(); i++) {
+            // 开始去重，当i大于0的之后的直接不用考虑了
+            if (nums[i] > 0) {
+                return result;
+            }
+            int left = i + 1;
+            int right = nums.size() - 1;
+            if (i > 0 && nums[i] == nums[i - 1]) {
+                continue;
+            }
+            while (right > left) {
+
+                if (nums[i] + nums[left] + nums[right] > 0) {
+                    right--;
+                } else if (nums[i] + nums[left] + nums[right] < 0) {
+                    left++;
+                } else {
+                    // 这个里面就是先收集结果，然后再去重操作
+                    result.push_back(
+                        vector<int>{nums[i], nums[left], nums[right]});
+                    // 这里真不会这几个数放进去啊。
+                    while (right > left&&nums[left] == nums[left + 1]) {//这里去重的位置之前搞错了应该是left+1.妈的，这里居然会搞错，已经更正
+                        left++;
+                    }
+                    while (right > left&&nums[right] == nums[right - 1]) {
+                        right--;
+                    }
+
+                    right--;
+                    left++;
+                    // 判断条件结束之后进行同时收缩
+                }
+            }
+        }
+        return result;
+    }
+};
+```
+
+
+
+
+
+# 字符串
+
+## part01
+
+#### [反转字符串](https://leetcode.cn/problems/reverse-string/)
+
+```c++
+class Solution{
+    public:
+    void reverseString(vector<char>&s){
+        // int i=0;
+        // int j=s.size()-1;
+        // while(i<j){
+        //     swap(s[i],s[j]);
+        // }超时了
+        for(int i=0,j=s.size()-1;i<s.size()/2;i++,j--){
+            swap(s[i],s[j]);
+        }
+    }
+};
+```
+
+emmmm....while的超时是因为没有进行i,j收缩呀
+
+```c++
+class Solution{
+    public:
+    void reverseString(vector<char>&s){
+        int i=0;
+        int j=s.size()-1;
+        while(i<j){
+            swap(s[i],s[j]);
+            i++;
+            j--;
+        }
+    }
+};
+```
+
+
+
+
+
+#### [反转字符串 II](https://leetcode.cn/problems/reverse-string-ii/)
+
+```c++
+class Solution { 
+public: 
+    string reverseStr(string s, int k) { 
+     //首先是要遍历字符串的 
+     for(int fast=0;fast<s.size();fast+=k){ 
+        int slow=0; 
+        if(fast%k==0){//满足等与2k的条件时要干什么 
+            //翻转前k个 
+            swap(s[slow],s[slow+k]); 
+            slow+=2*k;//slow前提至下一个需要反转的位置。 
+        }else{ 
+            swap(s[slow],s[s.size()-slow]); 
+        } 
+        } 
+        return s;   
+    } 
+};
+```
+
+
+
+##### 代码中的问题
+主要错误：
+
+1. 变量初始化问题 ： slow 变量在每次循环中都被重置为0，这会导致每次都从字符串开头开始操作。
+2. 反转逻辑错误 ：使用单个 swap 无法完成整个子串的反转，需要使用双指针或库函数来反转k个字符。
+3. 条件判断错误 ： fast%k==0 不是判断是否满足2k的条件，应该使用 fast%(2*k)==0 。
+4. 索引计算错误 ： slow+k 可能会超出字符串范围，需要检查边界条件。
+5. 循环步进错误 ： fast+=k 会导致每次只前进k个字符，而题目要求每2k个字符为一组。
+
+
+
+正确代码：
+
+```c++
+class Solution {
+public:
+    string reverseStr(string s, int k) {
+     //首先是要遍历字符串的
+     int n=s.size();
+     for(int i=0;i<n;i+=2*k){
+        int slow=i;
+        int fast=min(i+k-1,n-1);//使用min是为了处理最后末尾的部分
+        while(slow<fast){
+            swap(s[slow],s[fast]);
+            slow++;
+            fast--;
+        }
+        }
+        return s;   
+    }
+};
+```
+
+
+
+**字符串与数组的关系：**
+
+字符串是若干字符组成的有序序列，也可以理解为一个字符数组。结尾符号是`\0`,但是判断条件不能是以下这样：
+
+```c++
+int main(){
+
+    char a[5]={'y','u','y','u','e'};
+    for(int i=0;i!='\0';i++){
+        cout<<a[i]<<" ";
+    }
+    cout<<endl;
+    return 0;
+}
+```
+
+这在一开始就是不成立的，因为i=0为int类型，‘\0’属于字符类型，所以不会进入循环，一开始就不满足进入循环的条件：），所以不会打印任何东西
+
+
+
+#### 反转字符串中的单词
+
+[(https://leetcode.cn/problems/reverse-words-in-a-string/)
+
+三个点 1。处理函数。 2.自定义翻转函数。 3.主函数处理逻辑：先翻转整个处理过后的字符串，再翻转单个单词
+
+##### 点1 处理多余空格
+
+给一个字符串，要反转其中的单词，怎么翻转，首先要对字符串进行处理去除多余空格，怎么去除呢？比如下面的一个字符串：
+
+`"  Hello   liyinming zheshi  xiamen  "`.其中字符串首尾以及字符串中间都是有多余空格的。这个怎么处理呢？
+
+想想之前做过的题去除数组中target，一样的道理这里target就是空格，只需要判断之后从前到后进行覆盖即可。
+
+创建处理函数removeExtraSpaces 函数
+
+```c++
+void removeExtraSpace(string &s){
+	int slow=0;
+	for(int i=0;i<s.size();i++){
+		if(s[i]！=' '){
+			if(slow!=0) s[slow++]=" ";//加空格操作，slow!=0意味着不是第一个元素的时候。
+			while(i<s.size()&&s[i]!=' '){
+                s[slow++]=s[i++];
+            }
+		}
+	}
+    s.resize(slow);
+}
+```
+
+如果不理解这段代码，直接在编辑器中打断点 逐行执行就能清晰的看到过程了
+
+##### 点2 翻转函数
+
+```c++
+reverse(string &s,int start ,int end){
+    for(int i=start,j=end;i<j;i++,j--){//注意使用形参，因为有两次翻转呢，一次整体，一次单个单词翻转
+        swap(s[i],s[j]);
+    }
+}
+```
+
+整体函数：
+
+```c++
+class Solution {
+public:
+    void reverse(string& s, int start, int end) {
+        for (int i = start, j = end; i < j; i++, j--) {
+            swap(s[i], s[j]);
+        }
+    };
+    string removeExtraSpace(string& s) { // 去除空格
+        int slow = 0;
+        for (int i = 0; i < s.size(); i++) {
+            if (s[i] != ' ') {
+                if (slow != 0)
+                    s[slow++] =' ';// 这是啥意思呢，就是i跨过了好多个空格，然后遇到一个新单词了，只需要slow++自己创建一个新空格，其他处理情况就是跟着i进行覆盖
+                while (s[i] != ' ' && i < s.size()) {
+                    // 覆盖
+                    s[slow++] = s[i++];
+                }
+            }
+        }
+        s.resize(slow);
+        return s;
+    };
+    string reverseWords(string s) {
+        removeExtraSpace(s);
+        reverse(s, 0, s.size() - 1);
+        // 开始进入逐个单词处理
+        int start = 0;
+        for (int i = 0; i <= s.size(); i++) {//i要小于等于s.size()才能翻转到最后一个单词，并且这样处理也不用在处理最后一个单词的时候进行特殊处理，，因为前面的都是遇到空格的时候翻转空格之前的单词也就是start到i-1位置的字符。
+            if (s[i] == ' ' || i == s.size()) {
+                reverse(s, start, i - 1);
+                start = i + 1;
+            }
+        }
+        return s;
+    }
+};
+```
+
+注意主函数中单个单词翻转时候的逻辑，for循环的进入条件是`i<=s.size()`.注意可以等于。
+
+因为条件是遇到是s[i]==' '的时候才将i之前的单词进行翻转，所以在处理末尾的时候应该是i要指向最后一个元素的后面时也就是i==s.size()的时候，此时翻转仍可用  reverse(s, start, i - 1);进行处理，不用对最后部分进行单独处理了。
+
+
+
+-----
+
+复习链表相关知识：
+
+删除链表元素。三种方法复习：无虚拟头结点，使用虚拟头结点，使用递归。
+
+无虚拟头结点的时候要删除元素记得对头结点进行单独处理（因为需要不断调整确定该链表的头结点），之后对后续节点进行判断处理，使不使用dummy都要注意指针后移操作的顺序，p先动，q后动。
+
+使用递归的话。明确递归的三部曲：明确参数和返回值，明确单次循环终止条件，明确单词循环逻辑。
+
+递归实现：
+
+```c++
+class Solution {
+public:
+    ListNode* removeElements(ListNode* head, int val) {
+        // 如果使用递归
+        // 如果为空
+        if (head == nullptr) {
+            return nullptr;
+        }
+        // 如果头结点符合删除条件
+        if (head->val == val) {
+            ListNode* newHead = removeElements(head->next, val);
+            delete head;
+            return newHead;
+        } else {
+          
+            head->next = removeElements(head->next, val);
+            return head;
+        }
+        // 后续前进？
+    }
+};
+```
+
+说实话不理解。。   `head->next = removeElements(head->next, val);`是一直后移下去吗
+
+
+
+
+
+对于递归的使用，即使明确三步法但是依旧不是很理解为啥用着三步，然后我需要进行深度解析这三步的联系
+
+首先就是为什么使用递归？
+
+使用递归函数是因为我想用**同样的逻辑解决一个更小规模的子问题。**这里子问题是什么意思，结合上面链表来说，这个“子问题”的定义并不是父子关系，而是从整体来看的一个相似的小问题。
+
+##### 三步之1输入输出
+
+既然使用了递归函数解决问题，我们就要明确这个**函数需要什么样的输入与返回值**。也就分别对应的是输入：递的过程。返回值：终止“递”的操作时会返回什么结果。（亦或者不用返回任何结果）
+
+对于上面删除链表元素的例子，可以获悉，递归函数的定义是：删除head为头结点的链表中所有值为val的节点，返回处理后的新链表的头结点
+
+所以每次调用该函数的时候`removeElements(head->next, val)`，对于子链表来说都有一个新的头节点head,和一个要处理的值val.
+
+输入：子链表head,val
+
+返回：处理过后的头节点
+
+##### 三步之2终止条件
+
+递归啊，就是相当于压栈操作，如果没有终止条件那不就是无限循环吗？如果没有终止条件将会导致栈溢出或无限递归
+
+在上述例子中的终止条件就是子问题的head为空时，也就意味着整个链表到结尾了，可以终止了。
+
+##### 三步之3单次递归逻辑
+
+这个就是处理递的逻辑和归的逻辑的关系了。比较难处理，明确**如何递，如何归**。比如上述问题中，通过分支处理是否等于val进行处理。递的操作都是`removeElements(head->next, val);`但是归的时候分情况了。【归的过程就是逐渐靠近首次递归入口】
+
+```c++
+        // 如果头结点符合删除条件
+        if (head->val == val) {
+            ListNode* newHead = removeElements(head->next, val);
+            delete head;
+            return newHead;
+        } else {
+          
+            head->next = removeElements(head->next, val);
+            return head;
+        }
+```
+
+情况为  ` if (head->val == val) `可以看到，当头结点符合条件时返回的是newHead。也就是**在处理该节点时**根据归的结果进行返回，如果接收的归的结果是空，也就意味着返回的newHead为空，如果返回的结果非空，也就意味着该节点在归的过程将非空节点逐渐靠近首次递归入口。
+
+而情况为` if (head->val != val) `时使用head->next进行接收“归”来的数据，也就是要联系上"归"上来的节点用于建立链表关系，这样所有同性质的节点都能够通过next进行联系形成处理之后的完整链表.
+
+[链表part02](part02)
+
+两两交换链表中的节点
+
+直接递归
+
+```c++
+part02class Solution {
+public:
+    ListNode* reverse(ListNode *node){
+        if(node==nullptr||node->next==nullptr)return node;
+        ListNode*p=node;
+        ListNode*q=node->next;
+        ListNode*temp=q->next;
+        q->next=p;
+        p->next=reverse(temp);//递 归 处理后续两个节点
+        return q;
+    }
+    ListNode* swapPairs(ListNode* head) {
+            return reverse(head);
+    }
+};
+```
+
