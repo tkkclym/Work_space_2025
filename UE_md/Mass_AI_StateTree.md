@@ -671,9 +671,7 @@ emmmm想实现信息显示在屏幕上，但是又不想将将Farmer相关的属
 
 该节点没有target, 说明sendevent只能被任务节点或者全局任务中使用
 
-![image-20250720182836682](C:\Users\yinming.li\AppData\Roaming\Typora\typora-user-images\image-20250720182836682.png)
-
-
+<img src="../screenshot/sendmsg.png" alt="sendmsg" style="zoom:80%;" />
 
 为甚老板娘死不了，因为没有做statetreelogic的处理，之前在基类仅仅是将将AIController的logic关了，但是statetree的没处理
 
@@ -759,9 +757,7 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
   - 得分因数：这个在多个监测条件下能够跟其他条件进行平衡，单个监测条件的话，只改变分数意义不大。
   - **得分等式**：这个就非常重要了，哈哈哈能够评测是远距离得分高（线性）还是远距离得分高（反转线性），又或者范围内都一样分（常量）
 
-<img src="../../../MD/Snipaste/EQS.png" alt="EQS" style="zoom:80%;" />
-
-
+<img src="../screenshot/EQS.png" alt="EQS" style="zoom:75%;" />
 
 如何在任务中实现修改组件中的属性？在任务暴漏绑定的context，然后任务内可以使用get component by class 获取到想要使用的组件，然后执行组件中的函数等操作，但是是不是这些函数都应该定义为接口？还是可以直接使用？有待验证
 
@@ -842,7 +838,7 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
 
 - 经验证，只要任务中有一个执行了finish节点，不管是成功失败，都会立刻执行过渡状态检测的成功或者失败，也就是说，task返回的成功或者失败强关联状态的成功或者失败。
 
-<img src="../../../MD/Snipaste/多任务之关键任务.png" alt="多任务之关键任务" style="zoom:75%;" />
+<img src="../screenshot/多任务之关键任务.png" alt="多任务之关键任务" style="zoom:75%;" />
 
 如果目标是该状态中任意一个任务完成都转移状态的话，那就每个任务都增加finish Task节点。
 
@@ -860,9 +856,9 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
 
 状态树改变引用，而不是使用变量传来传去的方法：
 
-<img src="../../../MD/Snipaste/状态树引用获取和设置.png" alt="状态树引用获取和设置" style="zoom:80%;" />
 
 
+<img src="../screenshot/状态树引用获取和设置.png" alt="状态树引用获取和设置" style="zoom:75%;" />
 
 动态的在npc周围实现路径规划实际上的实现方式不就是EQS嘛，npc通过EQS观察周围的环境然后进一步的进行对环境中的点位进行选择然后移动过去，但是远点怎么执行呢？假如一个很远的点需要目标移动过去。
 
