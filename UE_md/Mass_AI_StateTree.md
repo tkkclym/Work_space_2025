@@ -813,4 +813,4 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
 
 为啥有时候ai会卡到AimoveTO节点，⚠️极大可能是因为目标点不在navmesh中导致无法获取目标点
 
-![注意State](..\Snipaste\注意State.png)
+<img src="..\Snipaste\注意State.png" alt="注意State"  />
