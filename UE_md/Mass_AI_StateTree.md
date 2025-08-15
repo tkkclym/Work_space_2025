@@ -819,6 +819,11 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
 <img src="..\Snipaste\注意State.png" alt="注意State"  />
 
 
+
+
+
+公司前天学的--
+
 ## 任务与状态之间的关系
 
 问题情境： 依旧是三个任务，任务运行过程中，第一个任务中如果条件满足，那就执行，只要不是阻塞型任务（delay）都不影响下一个任务的开始，<u>但是如果在在第一个任务执行某些逻辑之后我想直接结束此状态怎么做呢？</u>直接连接finish task?
@@ -855,11 +860,7 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
 
 状态树改变引用，而不是使用变量传来传去的方法：
 
-![状态树引用获取和设置](../../../MD/Snipaste/状态树引用获取和设置.png)
-
-
-
-
+<img src="../../../MD/Snipaste/状态树引用获取和设置.png" alt="状态树引用获取和设置" style="zoom:80%;" />
 
 
 
@@ -878,4 +879,3 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
 
 
 ## 状态中的选择使用工具 
->>>>>>> 03e8e19c9301a6c943082ab7fb2305e63fad3d60
