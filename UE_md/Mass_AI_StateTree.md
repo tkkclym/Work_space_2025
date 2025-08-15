@@ -669,7 +669,7 @@ emmmm想实现信息显示在屏幕上，但是又不想将将Farmer相关的属
 
 ---
 
-该节点没有target, 说明sendevent只能被任务节点或者全局任务中使用
+~~该节点没有target, 说明sendevent只能被任务节点或者全局任务中使用~~   【后续学习更正，其实是能够修改的，因为在其他地方也是能够获取到状态树的，能够获取状态树就能够发送Event】
 
 <img src="../screenshot/sendmsg.png" alt="sendmsg" style="zoom:80%;" />
 
@@ -875,3 +875,11 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
 
 
 ## 状态中的选择使用工具 
+
+该工具是什么？如何使用？
+
+- 该工具是为了在选择子状态的时候对某些条件加权然后选择计算之后评分较高的子状态。如果子状态评分相同，按顺序选择第一个子状态。
+- 在使用的时候需要将父类的选择行为设置为尝试选择最高权重的子类选项。
+  - <img src="../screenshot/utility.png" alt="utility" style="zoom:75%;" />
+  - 子类中可以选择常数或者绑定枚举，或者曲线，都能够作为权重的处理
+  - ⚠️如果进行选择或者没有动态绑定浮点数的时候记得设置一个constant，不然计算的时候会因为默认值为0，乘以权重之后结果为0、所以在对比其他子状态的时候评分就是最低的。 
