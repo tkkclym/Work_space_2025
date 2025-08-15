@@ -794,3 +794,23 @@ D:\UnrealEngine-5.5.1-release_two\UnrealEngine-5.5.1-release\Engine\Plugins\Runt
 - 顺序是**任务列表的逆序**（从最后一个激活的往上调用），这样方便清理依赖关系。
 
 注意⚠️：每个任务中的ExitState事件并不是完成任务时调用，别造成混淆，在任务中所有任务完成，离开此状态的时候才会执行，并且是逆序对各个任务中的exit state事件执行的。
+
+
+
+对于动画蓝图来说，如果改骨骼的话，应该是需要重新创建动画蓝图的，但是一个npc更改父类是可以更改其谷歌网格体的，所以问题不大。
+
+# 合并项目
+
+
+
+合并之后发现继承自BH的NPC一直不会动，原因是由于stateTreeAI的上下文是对应的Controller和Character，只要这两个有一个换掉就会和状态数产生数据断联
+
+
+
+更新needEating暂停的功能
+
+
+
+为啥有时候ai会卡到AimoveTO节点，⚠️极大可能是因为目标点不在navmesh中导致无法获取目标点
+
+![注意State](..\Snipaste\注意State.png)
